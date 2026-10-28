@@ -1,0 +1,384 @@
+openapi: 3.0.1
+info:
+  title: OdinVision IRIS scan Server
+  contact:
+    email: apiteam@odinvision.io
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+  version: 1.0-SNAPSHOT
+servers:
+  - url: 'https://api.iriscan.net/'
+tags:
+  - name: Persons
+    description: Persons
+paths:
+  /persons:
+    post:
+      summary: Add a new person to the database
+      tags:
+        - Tenant
+      security:
+        - TenantAuth: []
+      operationId: addPerson
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                leftEye:
+                  type: string
+                  format: binary
+                rightEye:
+                  type: string
+                  format: binary
+                metadata:
+                  type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+  /persons/{id}:
+    put:
+      summary: Edit person from the database
+      tags:
+        - Tenant
+      security:
+        - TenantAuth: []
+      operationId: editPerson
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Person ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete person from the database
+      tags:
+        - Tenant
+      security:
+        - TenantAuth: []
+      operationId: deletePerson
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Person ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /persons/query:
+    get:
+      summary: Query persons from database
+      tags:
+        - Tenant
+      security:
+        - TenantAuth: []
+      operationId: queryPersons
+      parameters:
+        - name: term
+          in: query
+          description: Text to search
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Zero-based page index
+          schema:
+            type: number
+            description: page number
+            format: int32
+          required: true
+        - name: pageSize
+          in: query
+          description: The size of the page to be returned
+          schema:
+            type: number
+            description: page number
+            format: int32
+          required: true
+        - name: sort
+          in: query
+          required: false
+          description: Sort result format - property,(asc,desc)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonPage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /persons/find:
+    post:
+      summary: Find person in database
+      tags:
+        - Tenant
+      security:
+        - TenantAuth: []
+      operationId: findPersons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                eye:
+                  type: string
+                  description: base64 image
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /persons/{id}/verify:
+    post:
+      summary: Verify person from database
+      tags:
+        - Tenant
+      security:
+        - TenantAuth: []
+      operationId: verifyPersons
+      parameters:
+        - name: id
+          in: path
+          description: person id to verify with
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                eye:
+                  type: string
+                  description: base64 image
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '412':
+          description: Verify failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    TenantAuth:
+      type: apiKey
+      in: header
+      name: Api-Key
+  schemas:
+    Person:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id
+        tenantId:
+          type: string
+          description: Tenant ID
+        iris:
+          $ref: '#/components/schemas/IrisData'
+        metadata:
+          type: object
+          description: Custom fields
+    PersonPage:
+      type: object
+      properties:
+        numberOfElements:
+          type: number
+          format: int64
+        totalElements:
+          type: number
+          format: int64
+        totalPages:
+          title: total
+          type: number
+          format: int64
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+    IrisData:
+      type: object
+      properties:
+        leftEye:
+          $ref: '#/components/schemas/Eye'
+        rightEye:
+          $ref: '#/components/schemas/Eye'
+    Eye:
+      type: object
+      properties:
+        raw:
+          type: string
+        code:
+          type: string
+        mask:
+          type: string
+        blackPercentage:
+          type: number
+          format: double
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: string
+        message:
+          type: string
+    ValidationErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: string
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: string

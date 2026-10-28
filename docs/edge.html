@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edge service · Iriscan Docs</title>
+<meta name="description" content="Local capture and matching service for Iritech iris scanners and webcams.">
+<link rel="canonical" href="https://docs.iriscan.net/edge.html">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+<a class="brand" href="index.html"><svg viewBox="37.65 43.294 511.585 511.598" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M536.34 219.06c-21.16 64.09-66.99 116.98-126.25 147.41-1.93-39.3-12.98-78.7-33.99-115.1-21.01-36.38-49.62-65.68-82.65-86.98-56-36.11-124.74-49.37-190.87-35.61C181.54 40.09 314.45 15.9 421.32 77.6c24.26 14 45.35 31.37 63.03 51.2 23.61 26.48 41.15 57.31 51.99 90.26z" fill="#5cc8ff"/><path d="M176.78 366.45c-3.29 66.55 19.62 132.7 64.57 183.09-25.98-5.39-51.55-14.96-75.79-28.96C58.7 458.9 13.21 331.71 50.51 218.98c5.39-16.31 12.52-32.31 21.45-47.76 8.92-15.46 19.2-29.62 30.62-42.44 66.13-13.75 134.87-.5 190.87 35.61-33.06 21.3-61.66 50.57-82.67 86.98-21.02 36.4-32.07 75.81-34 115.08z" fill="#1c77c3"/><path d="M514.93 426.97c-37.9 65.68-100.54 108.15-169.36 122.51-33.97 7.09-69.46 7.32-104.22.06-44.95-50.39-67.86-116.54-64.57-183.09 34.99 17.97 74.64 28.1 116.66 28.1s81.67-10.13 116.64-28.08c59.27-30.43 105.1-83.32 126.25-147.41 22 66.76 16.51 142.25-21.4 207.91z" fill="#0a328f"/></svg><span>IRISCAN</span><small>Docs</small></a>
+<nav><a href="sdk.html">SDK</a><a href="converter.html">Converter</a><a href="cloud-api.html">Cloud API</a><a href="https://github.com/biometric-technologies">GitHub</a><a href="https://www.iriscan.com/get-started">Contact</a></nav>
+<button class="menu-btn" type="button" onclick="document.body.classList.toggle('nav-open')">Menu</button>
+</header>
+<div class="layout">
+<aside class="side" onclick="if(event.target.tagName==='A')document.body.classList.remove('nav-open')">
+<div class="grp"><b>Get started</b>
+<a href="index.html">Overview</a>
+</div>
+<div class="grp"><b>Open source</b>
+<a href="sdk.html">Biometric SDK</a>
+<a href="converter.html">Biometric Converter</a>
+</div>
+<div class="grp"><b>Services</b>
+<a href="cloud-api.html">Cloud Iris API</a>
+<a href="edge.html" class="on">Edge service</a>
+<a class="sub" href="#installation">Installation</a>
+<a class="sub" href="#capture-api">Capture API</a>
+<a class="sub" href="#local-person-api">Local person API</a>
+</div>
+<div class="grp"><b>Integrations</b>
+<a href="mosip.html">MOSIP and Inji</a>
+</div>
+<div class="grp"><b>Links</b><a href="https://www.iriscan.com/">iriscan.com</a><a href="https://github.com/biometric-technologies">GitHub</a><a href="https://www.iriscan.com/biometric-data-interchange#demo">Converter demo</a></div>
+</aside>
+<main class="doc">
+<h1 id="edge-service">Edge service</h1>
+<p class="lead">A small service that runs next to the capture device. It talks to the scanner, gives your web application a simple local REST API for capture and live preview, keeps an encrypted local person database and synchronises it with the Cloud Iris API. Enrolment and matching keep working when the network is down.</p>
+
+<p>Supported devices:</p>
+<ul>
+<li>Iritech IriShield and other scanners on the Iritech IDDK 2000 SDK;</li>
+<li>generic USB webcams (for development and demos, not for production iris capture).</li>
+</ul>
+<p>Runs on Windows and Linux with Java 11 or newer.</p>
+<h2 id="installation">Installation</h2>
+<ol>
+<li>Install JDK 11 or newer and make sure <code>java -version</code> reports 11+.</li>
+<li>Install the device driver from the scanner vendor.</li>
+<li>Unpack the service build into a folder, for example <code>C:\iriscan</code> or <code>/opt/iriscan</code>.</li>
+<li>Start it with <code>start.bat</code> (Windows) or <code>./start</code> (Linux). To run it as a system service use <code>install-service.bat</code> or <code>install-service.sh</code>; on Linux this installs a systemd unit named <code>iriscan</code>.</li>
+</ol>
+<p>The service listens on <code>http://localhost:8080</code>. Builds are provided to customers on request.</p>
+<p>The local database is an embedded H2 file encrypted with AES and unlocked with the device ID and key issued with your tenant.</p>
+<h2 id="capture-api">Capture API</h2>
+<p>All responses carry <code>"status": "success"</code> or <code>"status": "error"</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST</code></td>
+<td><code>/1.0/initialize</code></td>
+<td>Opens the scanner and starts the preview stream</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/1.0/stream</code></td>
+<td>Live preview as MJPEG (<code>multipart/x-mixed-replace</code>)</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/1.0/capture</code></td>
+<td>Captures a sample, returns <code>captureIds</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/1.0/samplequality</code></td>
+<td>Quality of the last capture</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/1.0/download/image</code></td>
+<td>Last captured image as base64 JPEG in <code>sensorData</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/1.0/deviceinfo</code></td>
+<td>Device properties as key/value pairs</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-json">POST /1.0/initialize
+{ &quot;status&quot;: &quot;success&quot;, &quot;cameraModality&quot;: &quot;monocular&quot;, &quot;streamUrls&quot;: [&quot;stream&quot;] }
+
+GET /1.0/samplequality
+{ &quot;status&quot;: &quot;success&quot;, &quot;quality&quot;: { &quot;submodality&quot;: &quot;iris&quot;, &quot;totalScore&quot;: 87, &quot;usableAreaScore&quot;: 92 } }
+</code></pre>
+<p>A typical page puts <code>&lt;img src="http://localhost:8080/1.0/stream"&gt;</code> in front of the user, polls <code>samplequality</code> while the subject positions the eye, calls <code>capture</code> when the score is good enough and then <code>download/image</code>.</p>
+<h2 id="local-person-api">Local person API</h2>
+<p>The same person operations as the <a href="cloud-api.html">Cloud Iris API</a> are served locally under <code>/tenant-api/persons</code>: create, update, delete, query, 1:N <code>find</code> and 1:1 <code>verify</code>.</p>
+<p>Every new person is encrypted with the device key and pushed to the cloud tenant over a persistent RSocket connection. Records enrolled while the site was offline are sent when the connection comes back, so enrolment and verification never wait for the network.</p>
+<div class="pager"><a href="cloud-api.html"><small>Previous</small>Cloud Iris API</a><a class="next" href="mosip.html"><small>Next</small>MOSIP and Inji</a></div>
+<footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.net">info@iriscan.net</a></footer>
+</main>
+</div>
+</body>
+</html>

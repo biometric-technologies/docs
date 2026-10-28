@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biometric Converter · Iriscan Docs</title>
+<meta name="description" content="Convert fingerprint images to ISO/IEC 19794-2 and ANSI INCITS 378 minutiae templates and between template formats.">
+<link rel="canonical" href="https://docs.iriscan.net/converter.html">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+<a class="brand" href="index.html"><svg viewBox="37.65 43.294 511.585 511.598" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M536.34 219.06c-21.16 64.09-66.99 116.98-126.25 147.41-1.93-39.3-12.98-78.7-33.99-115.1-21.01-36.38-49.62-65.68-82.65-86.98-56-36.11-124.74-49.37-190.87-35.61C181.54 40.09 314.45 15.9 421.32 77.6c24.26 14 45.35 31.37 63.03 51.2 23.61 26.48 41.15 57.31 51.99 90.26z" fill="#5cc8ff"/><path d="M176.78 366.45c-3.29 66.55 19.62 132.7 64.57 183.09-25.98-5.39-51.55-14.96-75.79-28.96C58.7 458.9 13.21 331.71 50.51 218.98c5.39-16.31 12.52-32.31 21.45-47.76 8.92-15.46 19.2-29.62 30.62-42.44 66.13-13.75 134.87-.5 190.87 35.61-33.06 21.3-61.66 50.57-82.67 86.98-21.02 36.4-32.07 75.81-34 115.08z" fill="#1c77c3"/><path d="M514.93 426.97c-37.9 65.68-100.54 108.15-169.36 122.51-33.97 7.09-69.46 7.32-104.22.06-44.95-50.39-67.86-116.54-64.57-183.09 34.99 17.97 74.64 28.1 116.66 28.1s81.67-10.13 116.64-28.08c59.27-30.43 105.1-83.32 126.25-147.41 22 66.76 16.51 142.25-21.4 207.91z" fill="#0a328f"/></svg><span>IRISCAN</span><small>Docs</small></a>
+<nav><a href="sdk.html">SDK</a><a href="converter.html">Converter</a><a href="cloud-api.html">Cloud API</a><a href="https://github.com/biometric-technologies">GitHub</a><a href="https://www.iriscan.com/get-started">Contact</a></nav>
+<button class="menu-btn" type="button" onclick="document.body.classList.toggle('nav-open')">Menu</button>
+</header>
+<div class="layout">
+<aside class="side" onclick="if(event.target.tagName==='A')document.body.classList.remove('nav-open')">
+<div class="grp"><b>Get started</b>
+<a href="index.html">Overview</a>
+</div>
+<div class="grp"><b>Open source</b>
+<a href="sdk.html">Biometric SDK</a>
+<a href="converter.html" class="on">Biometric Converter</a>
+<a class="sub" href="#formats">Formats</a>
+<a class="sub" href="#docker">Docker</a>
+<a class="sub" href="#rest-api">REST API</a>
+<a class="sub" href="#command-line">Command line</a>
+<a class="sub" href="#c-library">C library</a>
+<a class="sub" href="#webassembly">WebAssembly</a>
+<a class="sub" href="#enterprise-conversion">Enterprise conversion</a>
+</div>
+<div class="grp"><b>Services</b>
+<a href="cloud-api.html">Cloud Iris API</a>
+<a href="edge.html">Edge service</a>
+</div>
+<div class="grp"><b>Integrations</b>
+<a href="mosip.html">MOSIP and Inji</a>
+</div>
+<div class="grp"><b>Links</b><a href="https://www.iriscan.com/">iriscan.com</a><a href="https://github.com/biometric-technologies">GitHub</a><a href="https://www.iriscan.com/biometric-data-interchange#demo">Converter demo</a></div>
+</aside>
+<main class="doc">
+<h1 id="biometric-converter">Biometric Converter</h1>
+<p class="lead">Converts fingerprint images into minutiae templates and templates between the ISO and ANSI interchange formats. Built on NIST NBIS (WSQ codec, MINDTCT minutiae detector) and NIST BiomDI (finger minutiae records). Ships as a C library, a command-line tool, a REST service in Docker and a WebAssembly build that runs in the browser.</p>
+
+<p>Typical uses: migrating an AFIS or access-control database from one vendor's format to another, feeding scans from a new sensor into an existing matcher, and auditing what a template file actually contains.</p>
+<p><strong>Try it without installing anything:</strong> the <a href="https://www.iriscan.com/biometric-data-interchange#demo">browser demo</a> converts files locally on your machine.</p>
+<h2 id="formats">Formats</h2>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Name</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Image</td>
+<td>WSQ (FBI Wavelet Scalar Quantization)</td>
+<td><code>WSQ</code></td>
+</tr>
+<tr>
+<td>Image</td>
+<td>JPEG, JPEG 2000, PNG, NIST IHead</td>
+<td>detected automatically</td>
+</tr>
+<tr>
+<td>Minutiae</td>
+<td>ISO/IEC 19794-2:2005 record</td>
+<td><code>ISO</code></td>
+</tr>
+<tr>
+<td>Minutiae</td>
+<td>ISO/IEC 19794-2 normal-size card</td>
+<td><code>ISONC</code></td>
+</tr>
+<tr>
+<td>Minutiae</td>
+<td>ISO/IEC 19794-2 compact card</td>
+<td><code>ISOCC</code></td>
+</tr>
+<tr>
+<td>Minutiae</td>
+<td>ANSI INCITS 378-2004</td>
+<td><code>ANSI</code></td>
+</tr>
+</tbody>
+</table>
+<p>Conversions:</p>
+<ul>
+<li>image → any minutiae format (MINDTCT extraction);</li>
+<li><code>ANSI</code> ↔ <code>ISO</code>, and from <code>ANSI</code> to either card format;</li>
+<li>card formats → <code>ANSI</code>/<code>ISO</code>, given the image resolution (card formats do not store it).</li>
+</ul>
+<p>A template cannot be turned back into a fingerprint image: minutiae keep positions, angles and types of ridge endings and bifurcations, not the ridges themselves. To check a template visually, plot its minutiae, as the browser demo does.</p>
+<p>Angles are stored in 2° units in ANSI and 360/256° units in ISO, so an ISO → ANSI → ISO round trip can move individual angles by one unit. Coordinates and types are preserved exactly.</p>
+<h2 id="docker">Docker</h2>
+<p>The quickest way to run the converter.</p>
+<pre><code class="language-sh"># command line
+docker run -i --rm -v &quot;$PWD/work:/opt/work&quot; biometrictechnologies/biometric-converter-cli \
+  convert -i /opt/work/finger.wsq -ti WSQ -o /opt/work/finger.ist -to ISO
+
+# REST service on port 8080
+docker run -d -p 8080:8080 biometrictechnologies/biometric-converter
+</code></pre>
+<h2 id="rest-api">REST API</h2>
+<p>Requests and responses are JSON; files travel as base64.</p>
+<h3 id="convert-one-file">Convert one file</h3>
+<pre><code class="language-http">POST /convert
+Content-Type: application/json
+
+{
+  &quot;input&quot;: &quot;&lt;base64 WSQ&gt;&quot;,
+  &quot;inputType&quot;: &quot;WSQ&quot;,
+  &quot;outputType&quot;: &quot;ISO&quot;
+}
+</code></pre>
+<pre><code class="language-json">{ &quot;output&quot;: &quot;&lt;base64 ISO/IEC 19794-2 record&gt;&quot; }
+</code></pre>
+<p><code>imageResX</code> and <code>imageResY</code> (pixels per centimetre) are required only when the input is a card format.</p>
+<h3 id="convert-a-batch">Convert a batch</h3>
+<pre><code class="language-http">POST /convert-batch
+Content-Type: application/json
+
+{
+  &quot;data&quot;: [
+    { &quot;id&quot;: &quot;subject-17-r-index&quot;, &quot;input&quot;: &quot;&lt;base64&gt;&quot;, &quot;inputType&quot;: &quot;WSQ&quot;, &quot;outputType&quot;: &quot;ANSI&quot; },
+    { &quot;id&quot;: &quot;subject-17-l-index&quot;, &quot;input&quot;: &quot;&lt;base64&gt;&quot;, &quot;inputType&quot;: &quot;WSQ&quot;, &quot;outputType&quot;: &quot;ANSI&quot; }
+  ]
+}
+</code></pre>
+<p>Files are converted in parallel and the response order is not guaranteed; match results by <code>id</code>.</p>
+<pre><code class="language-json">{ &quot;data&quot;: [ { &quot;id&quot;: &quot;subject-17-l-index&quot;, &quot;output&quot;: &quot;&lt;base64&gt;&quot; }, … ] }
+</code></pre>
+<h2 id="command-line">Command line</h2>
+<pre><code class="language-sh">convert -i &lt;input file&gt; -ti &lt;input type&gt; -o &lt;output file&gt; -to &lt;output type&gt;
+</code></pre>
+<p>For image input the type is detected from the file header; <code>-ti</code> only matters for minutiae input.</p>
+<h2 id="c-library">C library</h2>
+<pre><code class="language-c">#include &lt;converter.h&gt;
+
+/* image (WSQ, JPEG, JPEG 2000, PNG, IHead) -&gt; minutiae record */
+int img2fmr(unsigned char *idata, int ilen, char *otype,
+            unsigned char **odata, int *olen);
+
+/* minutiae record -&gt; minutiae record */
+int fmr2fmr(unsigned char *idata, int ilen, unsigned char **odata, int *olen,
+            char *in_type, char *out_type);
+
+/* same, with the resolution needed for ISO card formats */
+int fmr2fmr_iso_card(unsigned char *idata, int ilen, unsigned char **odata, int *olen,
+                     char *in_type, char *out_type, int xres, int yres);
+</code></pre>
+<p>Output buffers are allocated by the library; free them with <code>free()</code>. Build instructions (NBIS and BiomDI first, then CMake) are in the <a href="https://github.com/biometric-technologies/biometric-converter">repository README</a>.</p>
+<h2 id="webassembly">WebAssembly</h2>
+<p>The browser build exposes the same pipeline to JavaScript: WSQ decoding and encoding, raw grayscale image → ISO/ANSI template, and ISO ↔ ANSI. Source and build script: <a href="https://github.com/polyakoff/iriscan.com/tree/main/tools/bdi-wasm"><code>tools/bdi-wasm</code></a>. It is 180 KB and needs no server, which makes it suitable for privacy-sensitive tools where biometric files must not leave the operator's machine.</p>
+<h2 id="enterprise-conversion">Enterprise conversion</h2>
+<p>For large migrations Iriscan runs the converter as a batch pipeline, on-premise or in your cloud, with format auditing (what each record actually contains, including personal data embedded in ANSI/NIST-ITL transactions), progress reporting and verification by re-matching. <a href="https://www.iriscan.com/get-started">Contact us</a>.</p>
+<div class="pager"><a href="sdk.html"><small>Previous</small>Biometric SDK</a><a class="next" href="cloud-api.html"><small>Next</small>Cloud Iris API</a></div>
+<footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.net">info@iriscan.net</a></footer>
+</main>
+</div>
+</body>
+</html>
