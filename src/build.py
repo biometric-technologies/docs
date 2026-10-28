@@ -13,7 +13,13 @@ GROUPS = [('Get started', ['index']), ('Open source', ['sdk', 'converter']),
 LOGO = '<svg viewBox="37.65 43.294 511.585 511.598" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M536.34 219.06c-21.16 64.09-66.99 116.98-126.25 147.41-1.93-39.3-12.98-78.7-33.99-115.1-21.01-36.38-49.62-65.68-82.65-86.98-56-36.11-124.74-49.37-190.87-35.61C181.54 40.09 314.45 15.9 421.32 77.6c24.26 14 45.35 31.37 63.03 51.2 23.61 26.48 41.15 57.31 51.99 90.26z" fill="#5cc8ff"/><path d="M176.78 366.45c-3.29 66.55 19.62 132.7 64.57 183.09-25.98-5.39-51.55-14.96-75.79-28.96C58.7 458.9 13.21 331.71 50.51 218.98c5.39-16.31 12.52-32.31 21.45-47.76 8.92-15.46 19.2-29.62 30.62-42.44 66.13-13.75 134.87-.5 190.87 35.61-33.06 21.3-61.66 50.57-82.67 86.98-21.02 36.4-32.07 75.81-34 115.08z" fill="#1c77c3"/><path d="M514.93 426.97c-37.9 65.68-100.54 108.15-169.36 122.51-33.97 7.09-69.46 7.32-104.22.06-44.95-50.39-67.86-116.54-64.57-183.09 34.99 17.97 74.64 28.1 116.66 28.1s81.67-10.13 116.64-28.08c59.27-30.43 105.1-83.32 126.25-147.41 22 66.76 16.51 142.25-21.4 207.91z" fill="#0a328f"/></svg>'
 
 FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-         '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">')
+         '<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel=\'stylesheet\'">'
+         '<noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>')
+STRIP = '<script>if(/\\.html$/.test(location.pathname))history.replaceState(null,"",location.pathname.replace(/(index)?\\.html$/,"")+location.search+location.hash)</script>'
+
+def clean_links(h):
+    h = re.sub(r'href="index\.html(#[^"]*)?"', lambda m: 'href="/' + (m.group(1) or '') + '"', h)
+    return re.sub(r'href="([a-z0-9-]+)\.html(#[^"]*)?"', lambda m: f'href="/{m.group(1)}{m.group(2) or ""}"', h)
 
 
 def parse(path):
@@ -137,6 +143,7 @@ def sidebar(pages, cur, toc):
 
 
 def shell(meta, body, nav, prev, nxt, canonical):
+    CSS = open(os.path.join(SRC, 'style.css'), encoding='utf-8').read()
     pager = '<div class="pager">'
     pager += f'<a href="{prev[0]}.html"><small>Previous</small>{prev[1]}</a>' if prev else '<span></span>'
     pager += f'<a class="next" href="{nxt[0]}.html"><small>Next</small>{nxt[1]}</a>' if nxt else '<span></span>'
@@ -145,13 +152,14 @@ def shell(meta, body, nav, prev, nxt, canonical):
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+{STRIP}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(meta["title"])} · Iriscan Docs</title>
 <meta name="description" content="{html.escape(meta.get("desc", ""))}">
 <link rel="canonical" href="{canonical}">
-<link rel="icon" href="favicon.png">
+<link rel="icon" href="/favicon.png">
 {FONTS}
-<link rel="stylesheet" href="style.css">
+<style>{CSS}</style>
 </head>
 <body>
 <header class="top">
@@ -199,9 +207,9 @@ def build():
             toc.append(('schemas', 'Schemas'))
         prev = (ORDER[n - 1], pages[ORDER[n - 1]]['nav']) if n else None
         nxt = (ORDER[n + 1], pages[ORDER[n + 1]]['nav']) if n + 1 < len(ORDER) else None
-        canonical = 'https://docs.iriscan.net/' + ('' if pid == 'index' else pid + '.html')
+        canonical = 'https://docs.iriscan.net/' + ('' if pid == 'index' else pid)
         open(os.path.join(OUT, pid + '.html'), 'w', encoding='utf-8').write(
-            shell(meta, body, sidebar(pages, pid, toc), prev, nxt, canonical))
+            clean_links(shell(meta, body, sidebar(pages, pid, toc), prev, nxt, canonical)))
     shutil.copy(os.path.join(SRC, 'style.css'), OUT)
     shutil.copy(os.path.join(SRC, 'tenant-api.yaml'), os.path.join(OUT, 'openapi.yaml'))
     if os.path.exists(os.path.join(SRC, 'favicon.png')):

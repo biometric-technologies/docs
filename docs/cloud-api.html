@@ -2,40 +2,121 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>if(/\.html$/.test(location.pathname))history.replaceState(null,"",location.pathname.replace(/(index)?\.html$/,"")+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cloud Iris API · Iriscan Docs</title>
 <meta name="description" content="REST API for iris enrolment, 1:N identification and 1:1 verification.">
-<link rel="canonical" href="https://docs.iriscan.net/cloud-api.html">
-<link rel="icon" href="favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="canonical" href="https://docs.iriscan.net/cloud-api">
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
+<style>:root{
+  --bg:#141416; --bg-soft:#1b1c1e; --card:#1f2022; --line:#2c2d31;
+  --text:#ffffff; --muted:#b6b8c1; --accent:#fd6262; --accent-ink:#141416; --label:#889ce7;
+  --code-bg:#0f0f11; --side:260px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:88px}
+body{background:var(--bg);color:var(--text);font:400 16px/1.7 "Open Sans",-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+h1,h2,h3,h4{font-family:"Poppins",sans-serif;line-height:1.25;color:#fff}
+h1{font-size:2.6rem;font-weight:300;margin:0 0 1rem}
+h2{font-size:1.6rem;font-weight:400;margin:3rem 0 1rem;padding-top:.6rem;border-top:1px solid var(--line)}
+h3{font-size:1.15rem;font-weight:600;margin:2rem 0 .6rem;color:var(--label)}
+h4{font-size:1rem;font-weight:600;margin:1.4rem 0 .4rem}
+p,ul,ol,table,pre{margin:0 0 1.1rem}
+ul,ol{padding-left:1.4rem}
+li{margin:.25rem 0}
+p,li{color:#e4e5ea}
+.lead{font-size:1.15rem;color:var(--muted);max-width:760px}
+code{font:500 .86em/1.5 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:.08em .35em;color:#f3d7d7}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:1rem 1.1rem;overflow:auto}
+pre code{background:none;border:0;padding:0;color:#e8e8ea;font-size:.84rem;line-height:1.6}
+table{border-collapse:collapse;width:100%;font-size:.92rem;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5rem .7rem;text-align:left;vertical-align:top}
+th{background:var(--bg-soft);font-weight:600;color:#fff}
+td code{white-space:nowrap}
+blockquote{border-left:3px solid var(--accent);background:var(--bg-soft);padding:.8rem 1rem;margin:0 0 1.1rem;border-radius:0 6px 6px 0}
+blockquote p{margin:0;color:var(--muted)}
+
+/* layout */
+header.top{position:sticky;top:0;z-index:20;height:68px;display:flex;align-items:center;gap:1rem;padding:0 24px;
+  background:rgba(20,20,22,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:.7rem;font-family:"Raleway",sans-serif;font-size:1.3rem;color:#fff;letter-spacing:.02em}
+.brand:hover{text-decoration:none}
+.brand svg{width:28px;height:28px}
+.brand small{font-family:"Poppins",sans-serif;font-size:.8rem;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:.05rem .45rem;margin-left:.2rem}
+header.top nav{margin-left:auto;display:flex;gap:1.3rem;font-size:.92rem}
+header.top nav a{color:#fff}
+.menu-btn{display:none;margin-left:auto;background:none;border:1px solid var(--line);color:#fff;border-radius:6px;padding:.35rem .7rem;font:inherit;cursor:pointer}
+.layout{display:grid;grid-template-columns:var(--side) minmax(0,1fr);max-width:1320px;margin:0 auto}
+aside.side{position:sticky;top:68px;align-self:start;height:calc(100vh - 68px);overflow:auto;padding:1.6rem 1.2rem 2rem 24px;border-right:1px solid var(--line)}
+aside.side .grp{margin-bottom:1.3rem}
+aside.side .grp b{display:block;font-family:"Poppins",sans-serif;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem}
+aside.side a{display:block;color:#d9dae0;font-size:.92rem;padding:.22rem .6rem;border-radius:5px;border-left:2px solid transparent}
+aside.side a:hover{background:var(--bg-soft);text-decoration:none}
+aside.side a.on{color:#fff;border-left-color:var(--accent);background:var(--bg-soft)}
+aside.side a.sub{font-size:.84rem;color:var(--muted);padding-left:1.2rem}
+main.doc{padding:2.4rem 3rem 5rem;min-width:0;max-width:960px}
+.crumb{font-size:.82rem;color:var(--muted);margin-bottom:.6rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem;margin:1.6rem 0 2rem}
+.card{display:block;background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;padding:1.2rem 1.3rem;color:var(--text)}
+.card:hover{border-color:var(--accent);text-decoration:none}
+.card h3{margin:0 0 .4rem;color:#fff;font-size:1.05rem}
+.card p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.55}
+.card .tag{display:inline-block;margin-top:.7rem;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--label)}
+.badge{display:inline-block;font:600 .72rem/1 "Poppins",sans-serif;letter-spacing:.04em;padding:.32rem .5rem;border-radius:4px;margin-right:.5rem;vertical-align:middle;color:var(--accent-ink)}
+.m-get{background:#7fd1a8}.m-post{background:#889ce7}.m-put{background:#f2c46d}.m-delete{background:#fd6262}
+.op{border:1px solid var(--line);border-radius:10px;padding:1.1rem 1.3rem;margin:0 0 1.4rem;background:var(--bg-soft)}
+.op h3{margin:0 0 .5rem;color:#fff;font-size:1.05rem;font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-weight:500;word-break:break-all}
+.op p.sum{color:var(--muted);margin:0 0 .9rem}
+.op h4{font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1rem 0 .4rem}
+.op pre{margin-bottom:.6rem}
+.resp{display:flex;flex-wrap:wrap;gap:.4rem;margin:0}
+.resp span{font-size:.8rem;border:1px solid var(--line);border-radius:4px;padding:.15rem .45rem;color:var(--muted)}
+.resp span b{color:#fff;margin-right:.3rem}
+footer.foot{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.4rem;color:var(--muted);font-size:.85rem}
+.pager{display:flex;justify-content:space-between;gap:1rem;margin-top:3rem}
+.pager a{flex:1;border:1px solid var(--line);border-radius:8px;padding:.8rem 1rem;color:#fff}
+.pager a small{display:block;color:var(--muted);font-size:.75rem}
+.pager a.next{text-align:right}
+@media(max-width:900px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  aside.side{display:none;position:fixed;top:68px;left:0;right:0;bottom:0;height:auto;z-index:15;background:var(--bg);border:0}
+  body.nav-open aside.side{display:block}
+  header.top nav{display:none}
+  .menu-btn{display:block}
+  main.doc{padding:1.8rem 16px 4rem}
+  h1{font-size:2rem}
+}
+</style>
 </head>
 <body>
 <header class="top">
-<a class="brand" href="index.html"><svg viewBox="37.65 43.294 511.585 511.598" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M536.34 219.06c-21.16 64.09-66.99 116.98-126.25 147.41-1.93-39.3-12.98-78.7-33.99-115.1-21.01-36.38-49.62-65.68-82.65-86.98-56-36.11-124.74-49.37-190.87-35.61C181.54 40.09 314.45 15.9 421.32 77.6c24.26 14 45.35 31.37 63.03 51.2 23.61 26.48 41.15 57.31 51.99 90.26z" fill="#5cc8ff"/><path d="M176.78 366.45c-3.29 66.55 19.62 132.7 64.57 183.09-25.98-5.39-51.55-14.96-75.79-28.96C58.7 458.9 13.21 331.71 50.51 218.98c5.39-16.31 12.52-32.31 21.45-47.76 8.92-15.46 19.2-29.62 30.62-42.44 66.13-13.75 134.87-.5 190.87 35.61-33.06 21.3-61.66 50.57-82.67 86.98-21.02 36.4-32.07 75.81-34 115.08z" fill="#1c77c3"/><path d="M514.93 426.97c-37.9 65.68-100.54 108.15-169.36 122.51-33.97 7.09-69.46 7.32-104.22.06-44.95-50.39-67.86-116.54-64.57-183.09 34.99 17.97 74.64 28.1 116.66 28.1s81.67-10.13 116.64-28.08c59.27-30.43 105.1-83.32 126.25-147.41 22 66.76 16.51 142.25-21.4 207.91z" fill="#0a328f"/></svg><span>IRISCAN</span><small>Docs</small></a>
-<nav><a href="sdk.html">SDK</a><a href="converter.html">Converter</a><a href="cloud-api.html">Cloud API</a><a href="https://github.com/biometric-technologies">GitHub</a><a href="https://www.iriscan.com/get-started">Contact</a></nav>
+<a class="brand" href="/"><svg viewBox="37.65 43.294 511.585 511.598" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M536.34 219.06c-21.16 64.09-66.99 116.98-126.25 147.41-1.93-39.3-12.98-78.7-33.99-115.1-21.01-36.38-49.62-65.68-82.65-86.98-56-36.11-124.74-49.37-190.87-35.61C181.54 40.09 314.45 15.9 421.32 77.6c24.26 14 45.35 31.37 63.03 51.2 23.61 26.48 41.15 57.31 51.99 90.26z" fill="#5cc8ff"/><path d="M176.78 366.45c-3.29 66.55 19.62 132.7 64.57 183.09-25.98-5.39-51.55-14.96-75.79-28.96C58.7 458.9 13.21 331.71 50.51 218.98c5.39-16.31 12.52-32.31 21.45-47.76 8.92-15.46 19.2-29.62 30.62-42.44 66.13-13.75 134.87-.5 190.87 35.61-33.06 21.3-61.66 50.57-82.67 86.98-21.02 36.4-32.07 75.81-34 115.08z" fill="#1c77c3"/><path d="M514.93 426.97c-37.9 65.68-100.54 108.15-169.36 122.51-33.97 7.09-69.46 7.32-104.22.06-44.95-50.39-67.86-116.54-64.57-183.09 34.99 17.97 74.64 28.1 116.66 28.1s81.67-10.13 116.64-28.08c59.27-30.43 105.1-83.32 126.25-147.41 22 66.76 16.51 142.25-21.4 207.91z" fill="#0a328f"/></svg><span>IRISCAN</span><small>Docs</small></a>
+<nav><a href="/sdk">SDK</a><a href="/converter">Converter</a><a href="/cloud-api">Cloud API</a><a href="https://github.com/biometric-technologies">GitHub</a><a href="https://www.iriscan.com/get-started">Contact</a></nav>
 <button class="menu-btn" type="button" onclick="document.body.classList.toggle('nav-open')">Menu</button>
 </header>
 <div class="layout">
 <aside class="side" onclick="if(event.target.tagName==='A')document.body.classList.remove('nav-open')">
 <div class="grp"><b>Get started</b>
-<a href="index.html">Overview</a>
+<a href="/">Overview</a>
 </div>
 <div class="grp"><b>Open source</b>
-<a href="sdk.html">Biometric SDK</a>
-<a href="converter.html">Biometric Converter</a>
+<a href="/sdk">Biometric SDK</a>
+<a href="/converter">Biometric Converter</a>
 </div>
 <div class="grp"><b>Services</b>
-<a href="cloud-api.html" class="on">Cloud Iris API</a>
+<a href="/cloud-api" class="on">Cloud Iris API</a>
 <a class="sub" href="#authentication">Authentication</a>
 <a class="sub" href="#how-matching-works">How matching works</a>
 <a class="sub" href="#errors">Errors</a>
 <a class="sub" href="#reference">Reference</a>
 <a class="sub" href="#schemas">Schemas</a>
-<a href="edge.html">Edge service</a>
+<a href="/edge">Edge service</a>
 </div>
 <div class="grp"><b>Integrations</b>
-<a href="mosip.html">MOSIP and Inji</a>
+<a href="/mosip">MOSIP and Inji</a>
 </div>
 <div class="grp"><b>Links</b><a href="https://www.iriscan.com/">iriscan.com</a><a href="https://github.com/biometric-technologies">GitHub</a><a href="https://www.iriscan.com/biometric-data-interchange#demo">Converter demo</a></div>
 </aside>
@@ -51,7 +132,7 @@
 <pre><code class="language-sh">curl https://api.iriscan.net/persons/query?page=0&amp;pageSize=20 \
   -H &quot;Api-Key: $IRISCAN_API_KEY&quot;
 </code></pre>
-<p>API keys are issued per tenant together with the monthly plan. To get one, <a href="https://www.iriscan.com/get-started">contact us</a> with the expected number of enrolments and identifications per month; on-premise deployment with the <a href="edge.html">Edge service</a> is arranged the same way.</p>
+<p>API keys are issued per tenant together with the monthly plan. To get one, <a href="https://www.iriscan.com/get-started">contact us</a> with the expected number of enrolments and identifications per month; on-premise deployment with the <a href="/edge">Edge service</a> is arranged the same way.</p>
 <h2 id="how-matching-works">How matching works</h2>
 <p>When a person is enrolled, each eye image is segmented, the iris ring is unwrapped and encoded into a binary iris code with a mask of unusable bits (eyelids, lashes, reflections). The response returns both, plus <code>blackPercentage</code>, the share of the iris hidden by occlusion. A high value means too little texture was visible, and the image is worth retaking.</p>
 <p><code>find</code> compares a probe eye against every enrolled template of the tenant and returns the best match, or <code>404</code> when nobody matches. <code>verify</code> compares the probe only against the given person and returns <code>412</code> when it does not match. Images are sent as base64 strings; near-infrared images from dedicated iris scanners give the best results.</p>
@@ -304,7 +385,7 @@
 <h3 id="schema-eye">Eye</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>raw</code></td><td>string</td><td>Normalised iris texture, base64</td></tr><tr><td><code>code</code></td><td>string</td><td>Binary iris code, base64</td></tr><tr><td><code>mask</code></td><td>string</td><td>Mask of unusable bits for the code, base64</td></tr><tr><td><code>blackPercentage</code></td><td>number (double)</td><td>Share of the iris hidden by eyelids, lashes or reflections (0–1)</td></tr></tbody></table>
 <h3 id="schema-errorresponse">ErrorResponse</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>timestamp</code></td><td>string (date-time)</td><td>Time of the error</td></tr><tr><td><code>status</code></td><td>string</td><td>HTTP status name</td></tr><tr><td><code>message</code></td><td>string</td><td>Human-readable error</td></tr></tbody></table>
 <h3 id="schema-validationerrorresponse">ValidationErrorResponse</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>timestamp</code></td><td>string (date-time)</td><td>Time of the error</td></tr><tr><td><code>status</code></td><td>string</td><td>HTTP status name</td></tr><tr><td><code>message</code></td><td>string</td><td>Human-readable error</td></tr><tr><td><code>errors</code></td><td>array of string</td><td>Validation messages, one per field</td></tr></tbody></table>
-<div class="pager"><a href="converter.html"><small>Previous</small>Biometric Converter</a><a class="next" href="edge.html"><small>Next</small>Edge service</a></div>
+<div class="pager"><a href="/converter"><small>Previous</small>Biometric Converter</a><a class="next" href="/edge"><small>Next</small>Edge service</a></div>
 <footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.net">info@iriscan.net</a></footer>
 </main>
 </div>
