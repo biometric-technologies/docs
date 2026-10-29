@@ -10,7 +10,7 @@ desc: Face, liveness and iris recognition SDK for Android, iOS, JVM and React Na
 What it does today:
 
 - **Face**: detects the face (ML Kit on Android, Apple Vision on iOS, OpenCV on the JVM), aligns it by the eyes and turns it into a FaceNet embedding. Two embeddings are compared by Euclidean distance.
-- **Liveness**: a TensorFlow Lite model scores a photo as real or spoof (printed photo, screen replay), and head pose from Euler angles supports challenge–response checks such as "turn left".
+- **Liveness**: a TensorFlow Lite model scores a photo as live or an attack (printed photo, screen replay), and head pose from Euler angles supports challenge–response checks such as "turn left".
 - **Iris**: locates pupil and iris boundaries, unwraps the iris texture and encodes it into a binary template. Templates are compared by the share of matching bits.
 - **Records**: reads and writes ISO/IEC 19794-6 iris records and ISO/IEC 19794-2 finger minutiae records, plus PNG, BMP and JPEG images.
 
@@ -117,14 +117,14 @@ The threshold depends on the model. With the FaceNet model above, a distance aro
 ## Liveness
 
 ```kotlin
-val spoofScore = ops.face().livenessPhoto().extractAndScore(selfie)  // 0.0 real … 1.0 spoof
-val isLive = ops.face().livenessPhoto().extractAndValidate(selfie)   // score below threshold
+val liveScore = ops.face().livenessPhoto().extractAndScore(selfie)   // 0.0 attack … 1.0 live
+val isLive = ops.face().livenessPhoto().extractAndValidate(selfie)   // score above threshold
 
 val pose = ops.face().livenessPosition().detectPosition(selfie)
 // 0 straight, 1 left, 2 right, 3 up, 4 down
 ```
 
-The photo check catches prints and screen replays on a single frame. For higher assurance, combine it with a random head-turn challenge using `detectPosition` across consecutive frames. The model is MobileNetV2 trained on a CelebA-based spoofing dataset; the training code is in [liveness-detection-model](https://github.com/biometric-technologies/liveness-detection-model) if you want to retrain it on your capture conditions.
+The photo check catches prints and screen replays on a single frame. For higher assurance, combine it with a random head-turn challenge using `detectPosition` across consecutive frames. The default model is DeePixBiS (pixel-wise binary supervision): it outputs a 14×14 map of live probabilities, and the score is its mean. [liveness-detection-model](https://github.com/biometric-technologies/liveness-detection-model) has an evaluation script that reports APCER and BPCER (ISO/IEC 30107-3) on your own images, so you can choose the threshold for your cameras, and training code for a MobileNetV2 alternative.
 
 ## Iris recognition
 
