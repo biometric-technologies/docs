@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build docs.iriscan.net: Markdown pages + OpenAPI reference -> static HTML."""
+"""Build docs.iriscan.com: Markdown pages + OpenAPI reference -> static HTML."""
 import html, json, os, re, shutil, sys
 import markdown, yaml
 
@@ -207,7 +207,7 @@ def build():
             toc.append(('schemas', 'Schemas'))
         prev = (ORDER[n - 1], pages[ORDER[n - 1]]['nav']) if n else None
         nxt = (ORDER[n + 1], pages[ORDER[n + 1]]['nav']) if n + 1 < len(ORDER) else None
-        canonical = 'https://docs.iriscan.net/' + ('' if pid == 'index' else pid)
+        canonical = 'https://docs.iriscan.com/' + ('' if pid == 'index' else pid)
         open(os.path.join(OUT, pid + '.html'), 'w', encoding='utf-8').write(
             clean_links(shell(meta, body, sidebar(pages, pid, toc), prev, nxt, canonical)))
     shutil.copy(os.path.join(SRC, 'style.css'), OUT)

@@ -1,16 +1,16 @@
 ![](.github/readme/banner.svg)
 
-# docs.iriscan.net
+# docs.iriscan.com
 
-Source of the Iriscan developer documentation at [docs.iriscan.net](https://docs.iriscan.net). The pages are written in Markdown, a small Python script turns them into a static site, and GitHub Pages serves the result from the `docs/` folder. If you found a mistake in the docs or want to add a page, this is where to do it.
+Source of the Iriscan developer documentation at [docs.iriscan.com](https://docs.iriscan.com). The pages are written in Markdown, a small Python script turns them into a static site, and GitHub Pages serves the result from the `docs/` folder. If you found a mistake in the docs or want to add a page, this is where to do it.
 
 ## What is documented
 
-- [Biometric SDK](https://docs.iriscan.net/sdk): face, liveness and iris recognition on Android, iOS, JVM and React Native, with installation, initialization and code samples.
-- [Biometric Converter](https://docs.iriscan.net/converter): fingerprint images to ISO/IEC 19794-2 and ANSI INCITS 378 minutiae templates, as a C library, CLI, REST service and WebAssembly build.
-- [Cloud Iris API](https://docs.iriscan.net/cloud-api): REST reference for iris enrollment, 1:N identification and 1:1 verification, generated from the OpenAPI file.
-- [Edge service](https://docs.iriscan.net/edge): the local capture and matching service for Iritech iris scanners and webcams.
-- [MOSIP and Inji](https://docs.iriscan.net/mosip): how Inji Wallet uses the SDK for offline face match.
+- [Biometric SDK](https://docs.iriscan.com/sdk): face, liveness and iris recognition on Android, iOS, JVM and React Native, with installation, initialization and code samples.
+- [Biometric Converter](https://docs.iriscan.com/converter): fingerprint images to ISO/IEC 19794-2 and ANSI INCITS 378 minutiae templates, as a C library, CLI, REST service and WebAssembly build.
+- [Cloud Iris API](https://docs.iriscan.com/cloud-api): REST reference for iris enrollment, 1:N identification and 1:1 verification, generated from the OpenAPI file.
+- [Edge service](https://docs.iriscan.com/edge): the local capture and matching service for Iritech iris scanners and webcams.
+- [MOSIP and Inji](https://docs.iriscan.com/mosip): how Inji Wallet uses the SDK for offline face match.
 
 ## Layout
 
