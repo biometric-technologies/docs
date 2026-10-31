@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
 <style>:root{
   --bg:#141416; --bg-soft:#1b1c1e; --card:#1f2022; --line:#2c2d31;
-  --text:#ffffff; --muted:#b6b8c1; --accent:#fd6262; --accent-ink:#141416; --label:#889ce7;
+  --text:#ffffff; --muted:#b6b8c1; --accent:#5cc8ff; --accent-ink:#141416; --label:#889ce7;
   --code-bg:#0f0f11; --side:260px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -129,7 +129,7 @@ footer.foot{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.4rem;
 <p>What it does today:</p>
 <ul>
 <li><strong>Face</strong>: detects the face (ML Kit on Android, Apple Vision on iOS, OpenCV on the JVM), aligns it by the eyes and turns it into a FaceNet embedding. Two embeddings are compared by Euclidean distance.</li>
-<li><strong>Liveness</strong>: a TensorFlow Lite model scores a photo as real or spoof (printed photo, screen replay), and head pose from Euler angles supports challenge–response checks such as "turn left".</li>
+<li><strong>Liveness</strong>: a TensorFlow Lite model scores a photo as live or an attack (printed photo, screen replay), and head pose from Euler angles supports challenge–response checks such as "turn left".</li>
 <li><strong>Iris</strong>: locates pupil and iris boundaries, unwraps the iris texture and encodes it into a binary template. Templates are compared by the share of matching bits.</li>
 <li><strong>Records</strong>: reads and writes ISO/IEC 19794-6 iris records and ISO/IEC 19794-2 finger minutiae records, plus PNG, BMP and JPEG images.</li>
 </ul>
@@ -205,13 +205,13 @@ val samePerson = ops.face().matcher().matches(t1, t2)    // distance &lt;= thres
 <p>For 1:N search against a few enrolled templates, <code>matchesAny</code> and <code>matchScoreMin</code> take the minimum distance across a list. For large galleries, store the templates server-side and index them; the embedding is a plain float vector (big-endian, 4 bytes per value).</p>
 <p>The threshold depends on the model. With the FaceNet model above, a distance around 1.0 is a reasonable starting point; tune it on your own data for the false-accept rate you need.</p>
 <h2 id="liveness">Liveness</h2>
-<pre><code class="language-kotlin">val spoofScore = ops.face().livenessPhoto().extractAndScore(selfie)  // 0.0 real … 1.0 spoof
-val isLive = ops.face().livenessPhoto().extractAndValidate(selfie)   // score below threshold
+<pre><code class="language-kotlin">val liveScore = ops.face().livenessPhoto().extractAndScore(selfie)   // 0.0 attack … 1.0 live
+val isLive = ops.face().livenessPhoto().extractAndValidate(selfie)   // score above threshold
 
 val pose = ops.face().livenessPosition().detectPosition(selfie)
 // 0 straight, 1 left, 2 right, 3 up, 4 down
 </code></pre>
-<p>The photo check catches prints and screen replays on a single frame. For higher assurance, combine it with a random head-turn challenge using <code>detectPosition</code> across consecutive frames. The model is MobileNetV2 trained on a CelebA-based spoofing dataset; the training code is in <a href="https://github.com/biometric-technologies/liveness-detection-model">liveness-detection-model</a> if you want to retrain it on your capture conditions.</p>
+<p>The photo check catches prints and screen replays on a single frame. For higher assurance, combine it with a random head-turn challenge using <code>detectPosition</code> across consecutive frames. The default model is DeePixBiS (pixel-wise binary supervision): it outputs a 14×14 map of live probabilities, and the score is its mean. <a href="https://github.com/biometric-technologies/liveness-detection-model">liveness-detection-model</a> has an evaluation script that reports APCER and BPCER (ISO/IEC 30107-3) on your own images, so you can choose the threshold for your cameras, and training code for a MobileNetV2 alternative.</p>
 <h2 id="iris-recognition">Iris recognition</h2>
 <pre><code class="language-kotlin">val eye1 = ops.io().readImage(eyeImageBytes1)   // near-infrared eye image, PNG/BMP/JPEG
 val eye2 = ops.io().readImage(eyeImageBytes2)

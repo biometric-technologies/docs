@@ -1,6 +1,6 @@
 :root{
   --bg:#141416; --bg-soft:#1b1c1e; --card:#1f2022; --line:#2c2d31;
-  --text:#ffffff; --muted:#b6b8c1; --accent:#fd6262; --accent-ink:#141416; --label:#889ce7;
+  --text:#ffffff; --muted:#b6b8c1; --accent:#5cc8ff; --accent-ink:#141416; --label:#889ce7;
   --code-bg:#0f0f11; --side:260px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
