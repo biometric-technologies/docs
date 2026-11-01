@@ -1558,45 +1558,6 @@ skipped unless <code>IRIS_DATASET</code> is set.</p>
 <li><strong>FNMR and FMR at the configured default threshold</strong>.</li>
 </ul>
 <p>To evaluate other settings, change the property objects at the top of the test.</p>
-<h3 id="results-on-casia-iris-interval">Results on CASIA-Iris-Interval</h3>
-<p>Measured with this benchmark during development of 0.7.0 (commit <code>ec4b40a</code>) on
-CASIA-Iris-Interval: 2,639 near-infrared images of 393 eyes, all pairs compared
-(8,585 genuine and about 3.3 million impostor comparisons).</p>
-<table>
-<thead>
-<tr>
-<th>Measure</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Failure to enroll</td>
-<td>0.11%</td>
-</tr>
-<tr>
-<td>Equal error rate</td>
-<td>4.2%</td>
-</tr>
-<tr>
-<td>FNMR at FMR 0.1%</td>
-<td>5.0%</td>
-</tr>
-<tr>
-<td>FNMR at FMR 0.01%</td>
-<td>5.9%</td>
-</tr>
-<tr>
-<td>At the default threshold 0.67</td>
-<td>FNMR 6.8%, FMR 0.002%</td>
-</tr>
-</tbody>
-</table>
-<p>These figures describe one public dataset from one sensor, with every image enrolled
-and compared, including the poorest captures, and no quality screening. They are not an independent evaluation and do not predict the
-accuracy on other sensors or populations. The dataset is distributed by the Institute
-of Automation, Chinese Academy of Sciences (CASIA) under its own license and is not
-part of this repository.</p>
 <p>The unit tests in <code>commonTest</code> also check the pipeline on synthetic near-infrared eyes
 (<code>SyntheticIris</code>): segmentation accuracy, eyelid masking, rotation compensation,
 invariance to brightness and contrast, template serialization, 1:N identification and
