@@ -22,6 +22,17 @@ def clean_links(h):
     return re.sub(r'href="([a-z0-9-]+)\.html(#[^"]*)?"', lambda m: f'href="/{m.group(1)}{m.group(2) or ""}"', h)
 
 
+def mermaid_blocks(md):
+    """```mermaid fences become <pre class="mermaid">, which mermaid.js renders in the browser
+    (the same diagrams GitHub renders in the SDK README)."""
+    return re.sub(r'(?ms)^```mermaid\n(.*?)^```\s*$',
+                  lambda m: '<pre class="mermaid">' + html.escape(m.group(1)) + '</pre>', md)
+
+
+MERMAID = ('<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";'
+           'mermaid.initialize({startOnLoad:true,theme:"dark",fontFamily:"Open Sans, sans-serif"});</script>')
+
+
 def parse(path):
     raw = open(path, encoding='utf-8').read()
     m = re.match(r'---\n(.*?)\n---\n', raw, re.S)
@@ -173,6 +184,7 @@ def shell(meta, body, nav, prev, nxt, canonical):
 </aside>
 <main class="doc">
 {body}
+{MERMAID if 'class="mermaid"' in body else ''}
 {pager}
 <footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.net">info@iriscan.net</a></footer>
 </main>
@@ -199,7 +211,7 @@ def build():
         md = meta['md']
         conv = markdown.Markdown(extensions=['tables', 'fenced_code', 'toc', 'attr_list', 'md_in_html'],
                                  extension_configs={'toc': {'slugify': lambda v, s: slug(v)}})
-        body = conv.convert(md.replace('{{REFERENCE}}', '<!--REF-->'))
+        body = conv.convert(mermaid_blocks(md).replace('{{REFERENCE}}', '<!--REF-->'))
         if '<!--REF-->' in body:
             body = re.sub(r'(<p>)?<!--REF-->(</p>)?', lambda m: render_openapi(os.path.join(SRC, 'tenant-api.yaml')), body)
         toc = [(t['id'], t['name']) for t in conv.toc_tokens[0]['children']] if conv.toc_tokens else []

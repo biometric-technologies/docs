@@ -89,6 +89,7 @@ footer.foot{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.4rem;
   main.doc{padding:1.8rem 16px 4rem}
   h1{font-size:2rem}
 }
+pre.mermaid{background:none;border:0;text-align:center;padding:0;margin:1.5rem 0}
 </style>
 </head>
 <body>
@@ -385,6 +386,7 @@ footer.foot{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.4rem;
 <h3 id="schema-eye">Eye</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>raw</code></td><td>string</td><td>Normalised iris texture, base64</td></tr><tr><td><code>code</code></td><td>string</td><td>Binary iris code, base64</td></tr><tr><td><code>mask</code></td><td>string</td><td>Mask of unusable bits for the code, base64</td></tr><tr><td><code>blackPercentage</code></td><td>number (double)</td><td>Share of the iris hidden by eyelids, lashes or reflections (0–1)</td></tr></tbody></table>
 <h3 id="schema-errorresponse">ErrorResponse</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>timestamp</code></td><td>string (date-time)</td><td>Time of the error</td></tr><tr><td><code>status</code></td><td>string</td><td>HTTP status name</td></tr><tr><td><code>message</code></td><td>string</td><td>Human-readable error</td></tr></tbody></table>
 <h3 id="schema-validationerrorresponse">ValidationErrorResponse</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>timestamp</code></td><td>string (date-time)</td><td>Time of the error</td></tr><tr><td><code>status</code></td><td>string</td><td>HTTP status name</td></tr><tr><td><code>message</code></td><td>string</td><td>Human-readable error</td></tr><tr><td><code>errors</code></td><td>array of string</td><td>Validation messages, one per field</td></tr></tbody></table>
+
 <div class="pager"><a href="/converter"><small>Previous</small>Biometric Converter</a><a class="next" href="/edge"><small>Next</small>Edge service</a></div>
 <footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.net">info@iriscan.net</a></footer>
 </main>

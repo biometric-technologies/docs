@@ -89,6 +89,7 @@ footer.foot{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.4rem;
   main.doc{padding:1.8rem 16px 4rem}
   h1{font-size:2rem}
 }
+pre.mermaid{background:none;border:0;text-align:center;padding:0;margin:1.5rem 0}
 </style>
 </head>
 <body>
@@ -147,6 +148,7 @@ const verified = await faceCompare(selfieBase64, credentialPhotoBase64);
 <p>The model path and checksum come from the wallet's build configuration, so a deployment can ship its own model without touching the code. See <a href="/sdk#react-native">Biometric SDK → React Native</a> for the full API, including liveness.</p>
 <h2 id="for-implementers">For implementers</h2>
 <p>Wallet providers and country integrators building on Inji can use the SDK as is, swap in a model trained on their own population, or add liveness and head-pose challenges, which the SDK already exposes. Iriscan provides model retraining and evaluation on representative data, tuning of thresholds for a target false-accept rate, and integration support: <a href="mailto:info@iriscan.net">info@iriscan.net</a>.</p>
+
 <div class="pager"><a href="/edge"><small>Previous</small>Edge service</a><span></span></div>
 <footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.net">info@iriscan.net</a></footer>
 </main>

@@ -89,6 +89,7 @@ footer.foot{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.4rem;
   main.doc{padding:1.8rem 16px 4rem}
   h1{font-size:2rem}
 }
+pre.mermaid{background:none;border:0;text-align:center;padding:0;margin:1.5rem 0}
 </style>
 </head>
 <body>
@@ -190,6 +191,7 @@ GET /1.0/samplequality
 <h2 id="local-person-api">Local person API</h2>
 <p>The same person operations as the <a href="/cloud-api">Cloud Iris API</a> are served locally under <code>/tenant-api/persons</code>: create, update, delete, query, 1:N <code>find</code> and 1:1 <code>verify</code>.</p>
 <p>Every new person is encrypted with the device key and pushed to the cloud tenant over a persistent RSocket connection. Records enrolled while the site was offline are sent when the connection comes back, so enrolment and verification never wait for the network.</p>
+
 <div class="pager"><a href="/cloud-api"><small>Previous</small>Cloud Iris API</a><a class="next" href="/mosip"><small>Next</small>MOSIP and Inji</a></div>
 <footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.net">info@iriscan.net</a></footer>
 </main>

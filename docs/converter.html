@@ -89,6 +89,7 @@ footer.foot{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.4rem;
   main.doc{padding:1.8rem 16px 4rem}
   h1{font-size:2rem}
 }
+pre.mermaid{background:none;border:0;text-align:center;padding:0;margin:1.5rem 0}
 </style>
 </head>
 <body>
@@ -240,6 +241,7 @@ int fmr2fmr_iso_card(unsigned char *idata, int ilen, unsigned char **odata, int 
 <p>The browser build exposes the same pipeline to JavaScript: WSQ decoding and encoding, raw grayscale image → ISO/ANSI template, and ISO ↔ ANSI. Source and build script: <a href="https://github.com/polyakoff/iriscan.com/tree/main/tools/bdi-wasm"><code>tools/bdi-wasm</code></a>. It is 180 KB and needs no server, which makes it suitable for privacy-sensitive tools where biometric files must not leave the operator's machine.</p>
 <h2 id="enterprise-conversion">Enterprise conversion</h2>
 <p>For large migrations Iriscan runs the converter as a batch pipeline, on-premise or in your cloud, with format auditing (what each record actually contains, including personal data embedded in ANSI/NIST-ITL transactions), progress reporting and verification by re-matching. <a href="https://www.iriscan.com/get-started">Contact us</a>.</p>
+
 <div class="pager"><a href="/sdk"><small>Previous</small>Biometric SDK</a><a class="next" href="/cloud-api"><small>Next</small>Cloud Iris API</a></div>
 <footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.net">info@iriscan.net</a></footer>
 </main>

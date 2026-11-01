@@ -5,7 +5,7 @@
 <script>if(/\.html$/.test(location.pathname))history.replaceState(null,"",location.pathname.replace(/(index)?\.html$/,"")+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Biometric SDK · Iriscan Docs</title>
-<meta name="description" content="Face, liveness and iris recognition SDK for Android, iOS, JVM and React Native.">
+<meta name="description" content="Open-source iris, face and liveness recognition for Android, iOS and the JVM, in Kotlin Multiplatform.">
 <link rel="canonical" href="https://docs.iriscan.com/sdk">
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Open+Sans:wght@400;600&family=Raleway:wght@400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
@@ -89,6 +89,7 @@ footer.foot{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.4rem;
   main.doc{padding:1.8rem 16px 4rem}
   h1{font-size:2rem}
 }
+pre.mermaid{background:none;border:0;text-align:center;padding:0;margin:1.5rem 0}
 </style>
 </head>
 <body>
@@ -104,13 +105,27 @@ footer.foot{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.4rem;
 </div>
 <div class="grp"><b>Open source</b>
 <a href="/sdk" class="on">Biometric SDK</a>
+<a class="sub" href="#what-it-does">What it does</a>
+<a class="sub" href="#quick-start">Quick start</a>
+<a class="sub" href="#how-it-works">How it works</a>
+<a class="sub" href="#status-of-the-modules">Status of the modules</a>
+<a class="sub" href="#architecture">Architecture</a>
 <a class="sub" href="#installation">Installation</a>
-<a class="sub" href="#initialization">Initialization</a>
-<a class="sub" href="#face-recognition">Face recognition</a>
-<a class="sub" href="#liveness">Liveness</a>
+<a class="sub" href="#initialization-and-configuration">Initialization and configuration</a>
 <a class="sub" href="#iris-recognition">Iris recognition</a>
-<a class="sub" href="#react-native_1">React Native</a>
-<a class="sub" href="#versions">Versions</a>
+<a class="sub" href="#face-recognition-and-liveness">Face recognition and liveness</a>
+<a class="sub" href="#model-loading-and-caching">Model loading and caching</a>
+<a class="sub" href="#images-records-and-i-o">Images, records and I/O</a>
+<a class="sub" href="#accuracy-and-the-benchmark">Accuracy and the benchmark</a>
+<a class="sub" href="#react-native">React Native</a>
+<a class="sub" href="#where-it-is-used">Where it is used</a>
+<a class="sub" href="#related-repositories">Related repositories</a>
+<a class="sub" href="#building-from-source">Building from source</a>
+<a class="sub" href="#ci-and-releases">CI and releases</a>
+<a class="sub" href="#limitations-and-known-gaps">Limitations and known gaps</a>
+<a class="sub" href="#contributing">Contributing</a>
+<a class="sub" href="#license">License</a>
+<a class="sub" href="#contact">Contact</a>
 <a href="/converter">Biometric Converter</a>
 </div>
 <div class="grp"><b>Services</b>
@@ -124,110 +139,1476 @@ footer.foot{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.4rem;
 </aside>
 <main class="doc">
 <h1 id="biometric-sdk">Biometric SDK</h1>
-<p class="lead">A Kotlin Multiplatform library for face and iris recognition that runs entirely on the device. One API across Android, iOS and the JVM, plus a React Native wrapper.</p>
-
-<p>What it does today:</p>
+<p>An open-source library that recognizes people by their iris or their face, and runs on Android, iOS and the JVM from one Kotlin code base. You give it an eye image or a selfie; it gives you a compact template and a yes-or-no answer to "is this the same person?". Nothing leaves the device or your server: there is no cloud call anywhere in the code.</p>
+<p>Iriscan uses the same code in its own products, and the face match of this SDK is the one that runs inside <a href="https://docs.iriscan.com/mosip">Inji Wallet</a>, the reference wallet of MOSIP, the open-source national ID platform.</p>
+<h2 id="what-it-does">What it does</h2>
 <ul>
-<li><strong>Face</strong>: detects the face (ML Kit on Android, Apple Vision on iOS, OpenCV on the JVM), aligns it by the eyes and turns it into a FaceNet embedding. Two embeddings are compared by Euclidean distance.</li>
-<li><strong>Liveness</strong>: a TensorFlow Lite model scores a photo as live or an attack (printed photo, screen replay), and head pose from Euler angles supports challenge–response checks such as "turn left".</li>
-<li><strong>Iris</strong>: locates pupil and iris boundaries, unwraps the iris texture and encodes it into a binary template. Templates are compared by the share of matching bits.</li>
-<li><strong>Records</strong>: reads and writes ISO/IEC 19794-6 iris records and ISO/IEC 19794-2 finger minutiae records, plus PNG, BMP and JPEG images.</li>
+<li>Turns a near-infrared photo of an eye into an iris template and compares two templates. The whole iris pipeline is plain Kotlin, so it behaves the same on every platform and needs no native libraries.</li>
+<li>Finds a face in a photo, turns it into an embedding with a FaceNet-type model and compares embeddings. Uses ML Kit on Android, Apple Vision on iOS and OpenCV on the JVM to find the face, and TensorFlow Lite to run the model.</li>
+<li>Checks that a face is live, not a printed photo or a screen, with a liveness model, and tells which way the head is turned.</li>
+<li>Reads and writes PNG and BMP images and converts to and from Bitmap, UIImage and BufferedImage.</li>
+<li>Serializes templates as ISO/IEC 19794-6 (iris image) and ISO/IEC 19794-2 (finger minutiae) records, the formats other biometric systems understand.</li>
 </ul>
-<p>Models are loaded from a URL or from the app bundle, cached on the device and optionally verified by checksum, so you can ship your own retrained model without changing code.</p>
+<p><img alt="What the SDK does with a real eye image: segmentation, unwrapped strip, iris code" src="https://raw.githubusercontent.com/biometric-technologies/biometric-sdk/master/.github/readme/iris-pipeline.svg" /></p>
+<h2 id="quick-start">Quick start</h2>
+<p>Add the dependency. Replace <code>0.7.0</code> with the latest version shown in the badges.</p>
+<pre><code class="language-kotlin">// Android
+implementation(&quot;net.iriscan:biometric-sdk-android:0.7.0&quot;)
+
+// JVM
+implementation(&quot;net.iriscan:biometric-sdk-jvm:0.7.0&quot;)
+</code></pre>
+<pre><code class="language-ruby"># iOS, Podfile
+pod 'BiometricSdk', '~&gt; 0.7.0'
+</code></pre>
+<p>Configure once, then compare two eye images:</p>
+<pre><code class="language-kotlin">import net.iriscan.sdk.BiometricSdkFactory
+import net.iriscan.sdk.iris.*
+
+val config = BiometricSdkFactory.configBuilder()
+    .withContext(applicationContext)                 // Android only
+    .withIris(
+        extractor = IrisExtractProperties(),
+        encoder = IrisEncodeProperties(),
+        matcher = IrisMatchProperties(threshold = 0.67),
+    )
+    .build()
+BiometricSdkFactory.initialize(config)
+val sdk = BiometricSdkFactory.getInstance()!!
+
+val eye1 = sdk.io().readImage(bytesOfFirstPhoto)
+val eye2 = sdk.io().readImage(bytesOfSecondPhoto)
+
+val template1 = sdk.iris().encoder().extractAndEncode(eye1)   // ByteArray, a few kilobytes
+val template2 = sdk.iris().encoder().extractAndEncode(eye2)
+
+val samePerson = sdk.iris().matcher().matches(template1, template2)
+</code></pre>
+<p>Store <code>template1</code> instead of the photo: it is what you compare against next time, and the photo cannot be rebuilt from it.</p>
+<p>Face comparison works the same way, with the model file supplied by you:</p>
+<pre><code class="language-kotlin">import net.iriscan.sdk.face.*
+
+val config = BiometricSdkFactory.configBuilder()
+    .withContext(applicationContext)
+    .withFace(
+        extractor = FaceExtractProperties(),
+        encoder = FaceEncodeProperties(
+            FaceNetModelConfiguration(
+                path = &quot;https://example.com/models/facenet.tflite&quot;,  // URL or local file
+                inputWidth = 160, inputHeight = 160, outputLength = 128,
+                modelChecksum = null, modelChecksumMethod = null, overrideCacheOnWrongChecksum = null,
+            )
+        ),
+        matcher = FaceMatchProperties(threshold = 1.0),
+        liveness = null,
+    )
+    .build()
+BiometricSdkFactory.initialize(config)
+val sdk = BiometricSdkFactory.getInstance()!!
+
+val face1 = sdk.face().encoder().extractAndEncode(nativeImage1)   // Bitmap, UIImage or BufferedImage
+val face2 = sdk.face().encoder().extractAndEncode(nativeImage2)
+val samePerson = face1 != null &amp;&amp; face2 != null &amp;&amp; sdk.face().matcher().matches(face1, face2)
+</code></pre>
+<p>Models are downloaded once and cached on the device. Working example apps: <a href="https://github.com/biometric-technologies/biometric-sdk-android-example">Android</a>, <a href="https://github.com/biometric-technologies/biometric-sdk-ios-example">iOS</a> and <a href="https://github.com/biometric-technologies/biometric-sdk-react-native">React Native</a>.</p>
+<h2 id="how-it-works">How it works</h2>
+<p><strong>Iris.</strong> The iris is the colored ring around the pupil. Its texture is formed before birth, does not change with age and differs even between identical twins and between a person's two eyes, which is why it is the most accurate biometric in everyday use. The SDK finds the pupil and the outer edge of the iris in the image, masks out eyelids and reflections, unwraps the ring into a rectangular strip and turns the texture of the strip into a string of bits, the iris code (with log-Gabor filters, the classic iris-code method; releases up to 0.6.0 compared neighboring pixels into local binary patterns). Two codes are compared by counting the bits that differ, ignoring masked areas; the SDK reports a similarity between 0 and 1 and calls it a match above the threshold you configured. Iris cameras use near-infrared light, which makes the texture visible even in dark eyes, so the algorithm expects NIR images.</p>
+<p><img alt="How two real iris codes are compared bit by bit" src="https://raw.githubusercontent.com/biometric-technologies/biometric-sdk/master/.github/readme/iris-steps.svg" /></p>
+<p>The pictures above are real output of the iris pipeline on the iris photo from our blog and on a <a href="https://commons.wikimedia.org/wiki/File:IRiris.jpg">near-infrared eye photo</a> by Boodlemason (Wikimedia Commons, CC BY-SA 3.0); the figure files are under the same license.</p>
+<p><strong>Face.</strong> The platform's face detector finds the largest face and its eyes, the SDK crops and aligns it, and a FaceNet-type neural network turns the crop into a list of numbers called an embedding. Faces of the same person give embeddings that are close together; the matcher measures the distance and compares it with the threshold. The network is a TensorFlow Lite file that you choose and host, so you can replace it with a better one without touching the SDK. The liveness check runs a second model on the face crop and returns a score; the position check uses the detector's head angles.</p>
+<p><strong>Templates, not photos.</strong> A template is small, cannot be turned back into the image, and is what you keep in your database. The ISO/IEC 19794 serializers let you exchange records with other vendors' software instead of being locked in.</p>
+<p>Every configuration parameter, the iris pipeline step by step and the per-platform notes are in the sections below; integration guides for the cloud and the edge service are on <a href="https://docs.iriscan.com/">docs.iriscan.com</a>.</p>
+<h2 id="status-of-the-modules">Status of the modules</h2>
+<p>This README describes version <code>0.7.0</code>, which replaces the iris algorithm. Releases up
+to <code>0.6.0</code> contain the previous iris encoder, whose templates are not compatible with
+the new ones (see <a href="#8-matching">Matching</a> for how old templates are handled).</p>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>API</th>
+<th>Android</th>
+<th>iOS</th>
+<th>JVM</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Iris extraction, encoding, matching</td>
+<td><code>iris()</code></td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>Common Kotlin, no native dependencies</td>
+</tr>
+<tr>
+<td>Iris quality assessment</td>
+<td><code>iris().quality()</code></td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>Components of ISO/IEC 29794-6, not certified</td>
+</tr>
+<tr>
+<td>Face extraction</td>
+<td><code>face().extractor()</code></td>
+<td>ML Kit</td>
+<td>Vision</td>
+<td>OpenCV Haar cascades</td>
+<td></td>
+</tr>
+<tr>
+<td>Face encoding and matching</td>
+<td><code>face().encoder()</code>, <code>face().matcher()</code></td>
+<td>TFLite</td>
+<td>TFLite</td>
+<td>TFLite</td>
+<td>You supply the FaceNet-type model</td>
+</tr>
+<tr>
+<td>Photo liveness</td>
+<td><code>face().livenessPhoto()</code></td>
+<td>TFLite</td>
+<td>TFLite</td>
+<td>TFLite</td>
+<td>You supply the model (DeePixBiS-type)</td>
+</tr>
+<tr>
+<td>Position liveness</td>
+<td><code>face().livenessPosition()</code></td>
+<td>ML Kit angles</td>
+<td>Vision angles</td>
+<td>always returns 0</td>
+<td></td>
+</tr>
+<tr>
+<td>Image I/O</td>
+<td><code>io()</code></td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>PNG and BMP in common code</td>
+</tr>
+<tr>
+<td>ISO/IEC 19794-6 and 19794-2 records</td>
+<td>serializer classes</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td>Not registered in <code>io().readRecord()</code></td>
+</tr>
+<tr>
+<td>Fingerprint extraction and matching</td>
+<td>none</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>Only the record format exists</td>
+</tr>
+<tr>
+<td>Generic quality control</td>
+<td><code>qualityControl()</code></td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>Throws <code>NotImplementedError</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="architecture">Architecture</h2>
+<h3 id="modules-and-packages">Modules and packages</h3>
+<p>The project is a single Gradle module with the source sets <code>commonMain</code>,
+<code>androidMain</code>, <code>iosMain</code> and <code>jvmMain</code>. All packages live under <code>net.iriscan.sdk</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>net.iriscan.sdk</code></td>
+<td><code>BiometricSdkFactory</code> (entry point), <code>BiometricSdkConfig</code> and its builder, <code>IrisConfig</code>, <code>FaceConfig</code>, <code>BiometricSdkOperations</code></td>
+</tr>
+<tr>
+<td><code>core.image</code></td>
+<td><code>Image</code> (width, height, color type, <code>IntArray</code> of pixels), <code>ImageColorType</code> (<code>RGB</code>, <code>GRAY</code>, <code>BINARY</code>), color helpers, <code>Point</code>, <code>Circle</code>, and the platform type <code>NativeImage</code></td>
+</tr>
+<tr>
+<td><code>core.io</code></td>
+<td>Platform byte type <code>DataBytes</code>, <code>HashMethod</code> (<code>CRC32</code>, <code>SHA256</code>), and internal pure-Kotlin <code>MemoryStream</code>, CRC-32, Adler-32, SHA-256 and zlib/DEFLATE</td>
+</tr>
+<tr>
+<td><code>core.record</code></td>
+<td><code>BiometricRecord</code> interface and <code>BiometricType</code></td>
+</tr>
+<tr>
+<td><code>io</code></td>
+<td><code>InputOutputOperations</code> (image codecs, native image conversion, record I/O), <code>ResourceIO</code> and <code>ResourceIOFactory</code> (model files and cache), <code>ImageSerializer</code> and <code>BiometricRecordSerializer</code> interfaces, BMP and PNG serializers</td>
+</tr>
+<tr>
+<td><code>iris</code></td>
+<td>Public iris API (<code>IrisOperations</code>, <code>IrisExtractor</code>, <code>IrisEncoder</code>, <code>IrisMatcher</code>, <code>IrisQualityAssessor</code>, property classes) and <code>iris.impl</code> with the algorithm</td>
+</tr>
+<tr>
+<td><code>iris.record.iso</code></td>
+<td><code>IsoRecord19794_6</code> model and <code>IsoRecord19794_6Serializer</code></td>
+</tr>
+<tr>
+<td><code>face</code></td>
+<td>Public face API (<code>FaceOperations</code>, <code>FaceExtractor</code>, <code>FaceEncoder</code>, <code>FaceMatcher</code>, <code>FaceLivenessPhotoDetection</code>, <code>FaceLivenessPositionDetection</code>, property classes); <code>face.impl</code> holds the common alignment and matching code and the <code>expect</code> declarations of the platform parts</td>
+</tr>
+<tr>
+<td><code>finger.record.iso</code></td>
+<td><code>IsoRecord19794_2</code> model and <code>IsoRecord19794_2Serializer</code></td>
+</tr>
+<tr>
+<td><code>qc</code></td>
+<td><code>QualityControlOperations</code> interface (not implemented)</td>
+</tr>
+<tr>
+<td><code>tf</code></td>
+<td><code>Interpreter</code> interface; each platform has its own TensorFlow Lite <code>InterpreterImpl</code></td>
+</tr>
+<tr>
+<td><code>exception</code></td>
+<td><code>SdkException</code>, <code>SdkInitializationException</code>, <code>SdkNotInitializedException</code>; <code>io.exception</code> holds <code>IOException</code> and <code>UnknownFormatException</code></td>
+</tr>
+</tbody>
+</table>
+<pre class="mermaid">flowchart TD
+    APP[&quot;Application&quot;]
+    subgraph common[&quot;commonMain: shared Kotlin&quot;]
+        FACTORY[&quot;BiometricSdkFactory&lt;br/&gt;configBuilder / initialize / getInstance&quot;]
+        OPS[&quot;BiometricSdkOperations&quot;]
+        IO[&quot;io()&lt;br/&gt;image codecs, conversion, records&quot;]
+        IRIS[&quot;iris()&lt;br/&gt;segmentation, encoding, matching, quality&quot;]
+        FACE[&quot;face()&lt;br/&gt;operations, alignment, matcher&quot;]
+        RES[&quot;ResourceIO&lt;br/&gt;model loading and cache&quot;]
+        CORE[&quot;core&lt;br/&gt;Image, MemoryStream, ZLib, CRC-32, SHA-256&quot;]
+        ISO[&quot;iris.record.iso, finger.record.iso&lt;br/&gt;ISO/IEC 19794-6 and 19794-2&quot;]
+    end
+    subgraph android[&quot;androidMain&quot;]
+        ANDR[&quot;Bitmap, ByteArray, Context&lt;br/&gt;ML Kit face detection&lt;br/&gt;TensorFlow Lite 2.12&lt;br/&gt;Ktor OkHttp&quot;]
+    end
+    subgraph ios[&quot;iosMain&quot;]
+        IOSN[&quot;CGImageRef wrapper, NSData&lt;br/&gt;Vision framework&lt;br/&gt;TensorFlowLiteObjC 2.12&lt;br/&gt;Ktor Darwin&quot;]
+    end
+    subgraph jvm[&quot;jvmMain&quot;]
+        JVMN[&quot;BufferedImage, ByteArray&lt;br/&gt;OpenCV 4.6 Haar cascades&lt;br/&gt;TensorFlow Lite 2.10 via JavaCPP&lt;br/&gt;Ktor OkHttp&quot;]
+    end
+    APP --&gt; FACTORY --&gt; OPS
+    OPS --&gt; IO
+    OPS --&gt; IRIS
+    OPS --&gt; FACE
+    IRIS --&gt; CORE
+    IO --&gt; CORE
+    APP -.-&gt;|&quot;used directly&quot;| ISO
+    FACE --&gt; RES
+    FACE -.-&gt;|&quot;expect / actual&quot;| ANDR
+    FACE -.-&gt;|&quot;expect / actual&quot;| IOSN
+    FACE -.-&gt;|&quot;expect / actual&quot;| JVMN
+    RES -.-&gt;|&quot;expect / actual&quot;| ANDR
+    RES -.-&gt;|&quot;expect / actual&quot;| IOSN
+    RES -.-&gt;|&quot;expect / actual&quot;| JVMN
+</pre>
+<h3 id="how-platform-code-is-split">How platform code is split</h3>
+<p>Everything that can be expressed in plain Kotlin is in <code>commonMain</code>: the whole iris
+pipeline, iris quality, face crop alignment, the face matcher, PNG/BMP codecs,
+checksums, zlib and the ISO record serializers. The platform source sets only provide
+the pieces listed below, declared with <code>expect</code> in common code (the build enables
+<code>-Xexpect-actual-classes</code>).</p>
+<table>
+<thead>
+<tr>
+<th><code>expect</code> declaration</th>
+<th>Android</th>
+<th>iOS</th>
+<th>JVM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PlatformContext</code></td>
+<td><code>typealias</code> to <code>android.content.Context</code> (required)</td>
+<td>empty abstract class (optional)</td>
+<td>empty abstract class (optional)</td>
+</tr>
+<tr>
+<td><code>NativeImage</code></td>
+<td><code>typealias</code> to <code>android.graphics.Bitmap</code></td>
+<td>class wrapping a <code>CGImageRef</code> (<code>NativeImage(cgImage)</code>)</td>
+<td><code>typealias</code> to <code>java.awt.image.BufferedImage</code></td>
+</tr>
+<tr>
+<td><code>DataBytes</code></td>
+<td><code>ByteArray</code></td>
+<td><code>NSData</code></td>
+<td><code>ByteArray</code></td>
+</tr>
+<tr>
+<td><code>InputOutputImageConvertOperations</code></td>
+<td><code>convert(Bitmap)</code>, <code>convertToBitmap(Image)</code></td>
+<td><code>convert(CGImageRef)</code>, <code>convertToCGImage(Image)</code>, <code>nsDataToByteArray</code>, <code>byteArrayToNsData</code></td>
+<td><code>convert(BufferedImage)</code>, <code>convertToBufferedImage(Image)</code></td>
+</tr>
+<tr>
+<td>Native image read/write</td>
+<td><code>BitmapFactory</code> / <code>Bitmap.compress</code></td>
+<td>ImageIO (<code>CGImageSource</code>) / raw pixel buffer</td>
+<td><code>javax.imageio.ImageIO</code></td>
+</tr>
+<tr>
+<td><code>createResourceIO</code></td>
+<td>assets, classpath, app files, HTTPS; cache in <code>Context.cacheDir</code></td>
+<td>app bundle, files, HTTPS; cache in <code>NSCachesDirectory</code></td>
+<td>classpath, files, HTTPS; cache in <code>${java.io.tmpdir}/.biometric-sdk/</code></td>
+</tr>
+<tr>
+<td><code>FaceExtractorInternal</code></td>
+<td>ML Kit face detection</td>
+<td>Vision <code>VNDetectFaceLandmarksRequest</code></td>
+<td>OpenCV Haar cascades</td>
+</tr>
+<tr>
+<td><code>FaceEncoderInternal</code>, <code>FaceLivenessPhotoDetectionInternal</code></td>
+<td>TFLite <code>Interpreter</code> + TFLite Support image ops</td>
+<td><code>TFLInterpreter</code> (XNNPACK on) + Core Graphics</td>
+<td>JavaCPP TFLite + Java2D</td>
+</tr>
+<tr>
+<td><code>FaceLivenessPositionDetectionInternal</code></td>
+<td>ML Kit head Euler angles</td>
+<td>Vision yaw and pitch</td>
+<td>not implemented, returns 0</td>
+</tr>
+</tbody>
+</table>
+<p>The library logs through <a href="https://github.com/AAkira/Napier">Napier</a>.
+<code>BiometricSdkFactory</code> installs a <code>DebugAntilog</code> when it is first touched, and a short
+trace id is attached to the log lines of one face operation when debug logging is on.</p>
 <h2 id="installation">Installation</h2>
+<h3 id="coordinates">Coordinates</h3>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Artifact</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kotlin Multiplatform</td>
+<td><code>net.iriscan:biometric-sdk:&lt;version&gt;</code></td>
+<td>Gradle metadata selects the Android or JVM variant</td>
+</tr>
+<tr>
+<td>Android</td>
+<td><code>net.iriscan:biometric-sdk-android:&lt;version&gt;</code></td>
+<td>AAR, <code>minSdk</code> 23, compiled against SDK 35; a <code>-debug</code> variant is also published</td>
+</tr>
+<tr>
+<td>JVM</td>
+<td><code>net.iriscan:biometric-sdk-jvm:&lt;version&gt;</code></td>
+<td>Java 11 bytecode or newer</td>
+</tr>
+<tr>
+<td>iOS</td>
+<td>CocoaPods pod <code>BiometricSdk</code></td>
+<td>Static framework, deployment target iOS 13.0</td>
+</tr>
+</tbody>
+</table>
+<p>Replace <code>&lt;version&gt;</code> with the release you use; the badges at the top show the latest
+published versions.</p>
 <h3 id="android">Android</h3>
-<pre><code class="language-kotlin">dependencies {
-    implementation(&quot;net.iriscan:biometric-sdk-android:0.6.0&quot;)
+<pre><code class="language-kotlin">// build.gradle.kts of the app module
+dependencies {
+    implementation(&quot;net.iriscan:biometric-sdk-android:0.7.0&quot;)
 }
 </code></pre>
-<p>Minimum Android API level is 23. TensorFlow Lite 2.12 and ML Kit face detection come as transitive dependencies.</p>
+<p>The library manifest declares no permissions. If you load models over HTTPS, add
+<code>&lt;uses-permission android:name="android.permission.INTERNET"/&gt;</code> to your app manifest.
+The AAR brings in TensorFlow Lite 2.12.0, TensorFlow Lite Support 0.4.3 and ML Kit
+face detection 16.1.5 as dependencies.</p>
 <h3 id="jvm">JVM</h3>
 <pre><code class="language-kotlin">dependencies {
-    implementation(&quot;net.iriscan:biometric-sdk-jvm:0.6.0&quot;)
+    implementation(&quot;net.iriscan:biometric-sdk-jvm:0.7.0&quot;)
 }
 </code></pre>
-<p>The JVM build uses TensorFlow Lite through JavaCPP and OpenCV for face detection, so it runs on Linux, macOS and Windows servers.</p>
-<h3 id="ios">iOS</h3>
-<pre><code class="language-ruby">pod 'BiometricSdk', '0.6.0'
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;net.iriscan&lt;/groupId&gt;
+    &lt;artifactId&gt;biometric-sdk-jvm&lt;/artifactId&gt;
+    &lt;version&gt;0.7.0&lt;/version&gt;
+&lt;/dependency&gt;
 </code></pre>
-<h3 id="react-native">React Native</h3>
+<p>The JVM artifact depends on the JavaCPP builds <code>org.bytedeco:opencv-platform</code> 4.6.0 and
+<code>org.bytedeco:tensorflow-lite-platform</code> 2.10.0. The <code>-platform</code> artifacts include native
+libraries for all supported operating systems, which makes the dependency set large;
+exclude the platforms you do not deploy to if size matters. Iris recognition itself
+does not use these native libraries.</p>
+<h3 id="ios-cocoapods">iOS (CocoaPods)</h3>
+<pre><code class="language-ruby">platform :ios, '13.0'
+
+target 'YourApp' do
+  pod 'BiometricSdk', '~&gt; 0.7.0'
+end
+</code></pre>
+<p>The pod is a static framework named <code>BiometricSdk</code> and depends on the
+<code>TensorFlowLiteObjC</code> pod, version 2.12.0. The podspec and the prebuilt XCFramework are
+published from the
+<a href="https://github.com/biometric-technologies/biometric-sdk-cocoapods-release">biometric-sdk-cocoapods-release</a>
+repository, tagged with the SDK version.</p>
+<h3 id="kotlin-multiplatform-projects">Kotlin Multiplatform projects</h3>
+<pre><code class="language-kotlin">kotlin {
+    sourceSets {
+        androidMain.dependencies { implementation(&quot;net.iriscan:biometric-sdk:0.7.0&quot;) }
+        jvmMain.dependencies { implementation(&quot;net.iriscan:biometric-sdk:0.7.0&quot;) }
+    }
+}
+</code></pre>
+<p>The release workflow publishes the Maven artifacts from a Linux runner and distributes
+iOS as the CocoaPods framework, so iOS apps should use the pod.</p>
+<h2 id="initialization-and-configuration">Initialization and configuration</h2>
+<p>The SDK is a process-wide singleton:</p>
+<ol>
+<li><code>BiometricSdkFactory.configBuilder()</code> returns a <code>BiometricSdkConfigBuilder</code>.</li>
+<li><code>withContext(...)</code>, <code>withIris(...)</code> and <code>withFace(...)</code> select what to initialize;
+   <code>build()</code> returns a <code>BiometricSdkConfig</code>.</li>
+<li><code>BiometricSdkFactory.initialize(config)</code> creates the operations. Only the first call
+   has an effect: later calls return without changing the configuration.</li>
+<li><code>BiometricSdkFactory.getInstance()</code> returns <code>BiometricSdkOperations</code>, or <code>null</code> (and
+   logs an error) before initialization.</li>
+</ol>
+<p><code>BiometricSdkOperations</code> exposes <code>io()</code>, <code>iris()</code>, <code>face()</code> and <code>qualityControl()</code>.
+<code>iris()</code> and <code>face()</code> throw <code>IllegalStateException</code> when the modality was not configured,
+and each face sub-operation throws the same exception when its own properties were not
+given. <code>io()</code> is always available.</p>
+<p><code>initialize</code> creates the TensorFlow Lite interpreters of the configured face
+operations immediately, which loads (and, for <code>https:</code> paths, downloads) the model
+files. Downloads run synchronously on the calling thread, so on Android call
+<code>initialize</code> off the main thread when models come from the network.</p>
+<h3 id="kotlin-android">Kotlin (Android)</h3>
+<pre><code class="language-kotlin">import net.iriscan.sdk.BiometricSdkFactory
+import net.iriscan.sdk.iris.IrisEncodeProperties
+import net.iriscan.sdk.iris.IrisExtractProperties
+import net.iriscan.sdk.iris.IrisMatchProperties
+import net.iriscan.sdk.iris.IrisQualityProperties
+
+val config = BiometricSdkFactory.configBuilder()
+    .withContext(applicationContext)          // required on Android
+    .withIris(
+        extractor = IrisExtractProperties(),
+        encoder = IrisEncodeProperties(),
+        matcher = IrisMatchProperties(threshold = 0.67),
+        quality = IrisQualityProperties(),     // optional, defaults shown
+    )
+    .build()
+
+BiometricSdkFactory.initialize(config)
+val sdk = BiometricSdkFactory.getInstance()!!
+
+val eye = sdk.io().convert(bitmap)                       // Bitmap -&gt; Image
+val template: ByteArray? = sdk.iris().encoder().extractAndEncode(eye)
+</code></pre>
+<p>On the JVM and iOS the context can be omitted; a default one is created. On Android
+<code>initialize</code> throws <code>SdkInitializationException</code> without a context.</p>
+<h3 id="kotlin-with-face-and-liveness">Kotlin with face and liveness</h3>
+<pre><code class="language-kotlin">import net.iriscan.sdk.core.io.HashMethod
+import net.iriscan.sdk.face.*
+
+val config = BiometricSdkFactory.configBuilder()
+    .withContext(applicationContext)
+    .withFace(
+        extractor = FaceExtractProperties(),
+        encoder = FaceEncodeProperties(
+            FaceNetModelConfiguration(
+                path = &quot;https://models.example.com/facenet.tflite&quot;, // your model
+                inputWidth = 160,                                   // must match the model
+                inputHeight = 160,
+                outputLength = 128,                                 // embedding length
+                modelChecksum = &quot;&lt;sha-256 of the file, lowercase hex&gt;&quot;,
+                modelChecksumMethod = HashMethod.SHA256,
+                overrideCacheOnWrongChecksum = true,
+            )
+        ),
+        matcher = FaceMatchProperties(threshold = 1.0),  // distance, calibrate it
+        liveness = FaceLivenessDetectionProperties(
+            photo = LivenessModelPhotoConfiguration(
+                path = &quot;assets:liveness.tflite&quot;,
+                inputWidth = 224,
+                inputHeight = 224,
+                threshold = 0.5,
+            ),
+            position = LivenessModelPositionConfiguration(threshold = 15.0), // degrees
+        ),
+    )
+    .build()
+</code></pre>
+<p>The model URLs, sizes and thresholds above are placeholders. The SDK does not ship
+face or liveness models; input size and output length must match the model you use.</p>
+<h3 id="java-jvm">Java (JVM)</h3>
+<pre><code class="language-java">import java.io.File;
+import javax.imageio.ImageIO;
+import net.iriscan.sdk.*;
+import net.iriscan.sdk.core.image.Image;
+import net.iriscan.sdk.iris.*;
+
+BiometricSdkConfig config = BiometricSdkFactory.INSTANCE.configBuilder()
+        .withIris(new IrisExtractProperties(), new IrisEncodeProperties(), new IrisMatchProperties())
+        .build();
+BiometricSdkFactory.INSTANCE.initialize(config);
+BiometricSdkOperations sdk = BiometricSdkFactory.INSTANCE.getInstance();
+
+Image eye = sdk.io().convert(ImageIO.read(new File(&quot;eye.png&quot;)));
+byte[] template = sdk.iris().encoder().extractAndEncode(eye);   // null on failure
+IrisQuality quality = sdk.iris().quality().assess(eye);         // null on failure
+</code></pre>
+<h3 id="swift-ios">Swift (iOS)</h3>
+<p>Kotlin objects are reached through <code>.shared</code> in Swift, <code>DataBytes</code> is <code>NSData</code>
+(<code>Data</code> in Swift), and <code>NativeImage</code> wraps a <code>CGImage</code>.</p>
+<pre><code class="language-swift">import BiometricSdk
+
+let builder = BiometricSdkFactory.shared.configBuilder()
+let config = builder.withFace(
+    extractor: FaceExtractProperties(),
+    encoder: FaceEncodeProperties(tfModel: FaceNetModelConfiguration(
+        path: &quot;bundle:facenet.tflite&quot;, inputWidth: 160, inputHeight: 160, outputLength: 128)),
+    matcher: FaceMatchProperties(threshold: 1.0),
+    liveness: FaceLivenessDetectionProperties(
+        photo: LivenessModelPhotoConfiguration(
+            path: &quot;bundle:liveness.tflite&quot;, inputWidth: 224, inputHeight: 224, threshold: 0.5),
+        position: LivenessModelPositionConfiguration(threshold: 15.0))
+).build()
+
+try BiometricSdkFactory.shared.initialize(config: config)
+
+guard let sdk = BiometricSdkFactory.shared.getInstance(),
+      let cgImage = uiImage.cgImage else { return }
+let image = NativeImage(cgImage: cgImage)
+
+let template = sdk.face().encoder().extractAndEncode(nativeImage: image)     // Data?
+let distance = sdk.face().matcher().matchScore(sample1: t1, sample2: t2)     // Double
+let live = sdk.face().livenessPhoto().extractAndValidate(nativeImage: image) // KotlinBoolean?
+let position = sdk.face().livenessPosition().detectPosition(nativeImage: image)
+
+// Iris works on the SDK Image type
+let eye = sdk.io().convert(image: cgImage)
+let quality = sdk.iris().quality().assess(sample: eye)
+let score = sdk.iris().matcher().score(sample1: irisTemplate1, sample2: irisTemplate2)
+let best = sdk.iris().matcher().identify(sample: probe, samples: gallery)     // IrisMatch?
+</code></pre>
+<p>Points specific to Swift:</p>
+<ul>
+<li>Kotlin default argument values are not exported to Objective-C and Swift. Every
+  argument of <code>withFace</code>, <code>withIris</code> and of the property constructors has to be passed.
+  This is easy for the face classes but verbose for the iris property classes
+  (for example <code>IrisExtractProperties</code> takes a Kotlin array of <code>ClosedRange</code> values).</li>
+<li>Kotlin methods that are overloaded on the parameter type, such as
+  <code>IrisEncoder.extractAndEncode(sample:)</code> for <code>Image</code> and <code>BiometricRecord</code>, get
+  disambiguated names in the generated Objective-C header. Check <code>BiometricSdk.h</code> in
+  the framework for the exact Swift names.</li>
+<li>Kotlin exceptions are only translated into Swift errors for functions annotated with
+  <code>@Throws</code>, which here is <code>initialize</code>. Calling <code>iris()</code> or <code>face()</code> on an SDK that was
+  not configured for that modality terminates the app.</li>
+</ul>
+<h2 id="iris-recognition">Iris recognition</h2>
+<h3 id="api">API</h3>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>iris().extractor().extract(image)</code></td>
+<td><code>Image?</code></td>
+<td>Unwrapped iris texture, <code>normalizedWidth</code> x <code>normalizedHeight</code>, <code>GRAY</code>, occluded pixels set to <code>-1</code>; <code>null</code> when segmentation fails</td>
+</tr>
+<tr>
+<td><code>iris().encoder().extractAndEncode(image)</code></td>
+<td><code>DataBytes?</code></td>
+<td>Segment, normalize and encode in one step; <code>null</code> when segmentation fails or less than 20% of the texture is usable</td>
+</tr>
+<tr>
+<td><code>iris().encoder().encode(texture)</code></td>
+<td><code>DataBytes</code></td>
+<td>Encode a texture produced by <code>extract</code> (or any grayscale texture, resampled to the configured size)</td>
+</tr>
+<tr>
+<td><code>iris().matcher().score(t1, t2)</code></td>
+<td><code>Double</code></td>
+<td>Similarity 0.0 to 1.0 (<code>1 - HD</code>)</td>
+</tr>
+<tr>
+<td><code>iris().matcher().matches(t1, t2)</code></td>
+<td><code>Boolean</code></td>
+<td><code>score &gt;= threshold</code></td>
+</tr>
+<tr>
+<td><code>iris().matcher().identify(probe, gallery)</code></td>
+<td><code>IrisMatch?</code></td>
+<td>Best candidate (<code>index</code>, <code>score</code>) if it reaches the threshold, otherwise <code>null</code></td>
+</tr>
+<tr>
+<td><code>iris().matcher().matchesAny(probe, gallery)</code></td>
+<td><code>Boolean</code></td>
+<td><code>identify(...) != null</code></td>
+</tr>
+<tr>
+<td><code>iris().quality().assess(image)</code></td>
+<td><code>IrisQuality?</code></td>
+<td>Quality metrics, combined score and failed checks; <code>null</code> when no iris is found</td>
+</tr>
+</tbody>
+</table>
+<p>The overloads that take a <code>BiometricRecord</code> (<code>extract</code>, <code>encode</code>, <code>extractAndEncode</code>,
+<code>matches</code>, <code>matchesAny</code>) are declared but not implemented and throw
+<code>NotImplementedError</code>.</p>
+<p>The input is an <code>Image</code> of any color type: <code>RGB</code> is converted with ITU-R BT.601 luma,
+<code>BINARY</code> maps to 0 and 255. The input is never modified. The algorithm is tuned for
+near-infrared eye images as produced by iris cameras; the eyelid detector, for example,
+assumes that eyelid skin is brighter than the iris.</p>
+<p>The iris code keeps no shared mutable state, so the iris operations can be called
+from several threads.</p>
+<h3 id="pipeline">Pipeline</h3>
+<pre class="mermaid">flowchart TD
+    IN[&quot;Eye image&quot;] --&gt; GRAY[&quot;Grayscale, BT.601 luma&quot;]
+    GRAY --&gt; SMALL[&quot;Working copy: area-average downscale&lt;br/&gt;shorter side about workingSize = 240 px&quot;]
+    SMALL --&gt; REFL[&quot;Reflection mask: saturated pixels and compact bright spots&lt;br/&gt;dilated, then inpainted from darker neighbours&quot;]
+    REFL --&gt; BLOBS[&quot;Pupil candidates: up to 8 dark blobs&lt;br/&gt;centroid and equivalent radius&quot;]
+    BLOBS --&gt; PUPIL[&quot;Pupil circle: integro-differential operator&lt;br/&gt;64 directions in 8 sectors, 0.375 sector quantile&lt;br/&gt;coarse search, refinement, glint-ring check&quot;]
+    PUPIL --&gt; LIMBUS[&quot;Limbus circle, two stages&lt;br/&gt;lateral sectors only, wide radial derivative&lt;br/&gt;innermost strong edge, then centre and radius refined&quot;]
+    LIMBUS --&gt; LIDS{&quot;detectEyelids&quot;}
+    LIDS --&gt;|&quot;true&quot;| LIDFIT[&quot;Upper and lower eyelids&lt;br/&gt;3 vertical bands, parabola or line&quot;]
+    LIDS --&gt;|&quot;false&quot;| UNWRAP
+    LIDFIT --&gt; UNWRAP[&quot;Rubber-sheet unwrap at full resolution&lt;br/&gt;256 x 64 texture&quot;]
+    UNWRAP --&gt; MASK[&quot;Mask: outside image, reflections, eyelids,&lt;br/&gt;intensity outliers beyond 3 robust sigma&quot;]
+    MASK --&gt; ENOUGH{&quot;usable texture at least 20%&quot;}
+    ENOUGH --&gt;|&quot;no&quot;| FAIL[&quot;null: failure to enroll&quot;]
+    ENOUGH --&gt;|&quot;yes&quot;| BANDS[&quot;16 radial bands, mean removed&quot;]
+    BANDS --&gt; GABOR[&quot;1D log-Gabor filter per band via FFT&lt;br/&gt;wavelength 18 px, sigmaOnF 0.5&quot;]
+    GABOR --&gt; BITS[&quot;2 phase bits at 128 angular positions&lt;br/&gt;validity mask, 15% weakest responses masked&quot;]
+    BITS --&gt; TEMPLATE[&quot;IR2 template&lt;br/&gt;4096-bit code + 4096-bit mask = 1,032 bytes&quot;]
+    TEMPLATE --&gt; MATCH[&quot;Masked fractional Hamming distance&lt;br/&gt;circular shifts of plus or minus 8 columns&lt;br/&gt;normalized for compared bits&quot;]
+    MATCH --&gt; SCORE[&quot;score = 1 - HD, compared with threshold 0.67&quot;]
+    MASK --&gt; QUALITY[&quot;Quality assessment&lt;br/&gt;ISO/IEC 29794-6 components&quot;]
+</pre>
+<h4 id="1-preparation-and-reflection-removal">1. Preparation and reflection removal</h4>
+<p>Segmentation runs on a copy downscaled by area averaging so that the shorter side is
+about <code>workingSize</code> pixels (240 by default; images are never upscaled). Specular
+reflections create strong false edges, so they are removed first. A pixel is a
+reflection if it is saturated (at least the larger of 230 and the 99.5th percentile of
+the image) or if it belongs to a compact bright spot: brighter than 170 and more than
+40 grey levels above a Gaussian-smoothed background, in a connected component whose
+bounding box is smaller than <code>max(6, shortSide / 20)</code> pixels. The size limit keeps
+bright sclera along the limbus and bright iris texture out of the mask. The mask is
+dilated by 3 pixels and the masked pixels are filled layer by layer from the 25th
+percentile of their unmasked 7 x 7 neighbourhood, so the halo of a glint does not
+spread into the fill. The result is smoothed with a Gaussian (sigma 1.2) for the
+boundary searches.</p>
+<h4 id="2-pupil">2. Pupil</h4>
+<p>Candidate pupils come from dark regions: starting from the darkest pixels below the
+image median, regions are grown while pixels stay within
+<code>max(12, 0.3 * (median - seed))</code> of the seed value. Regions of plausible size give up
+to 8 candidates, each represented by its centroid and equivalent radius, which places
+the search near the true centre even when the darkest pixel is off-centre.</p>
+<p>Around each candidate the boundary is searched with Daugman's integro-differential
+operator: for each centre and radius, the mean intensity on the circle is sampled in
+64 directions grouped into 8 angular sectors, the radial derivative is computed per
+sector and smoothed with a <code>[1 2 1]</code> kernel, and the sectors are combined by the 0.375
+quantile instead of the mean. A boundary therefore has to be present in about five of
+the eight sectors, which rejects circles that only touch a strong partial edge such as
+an eyelid or a cluster of eyelashes. Candidates are ranked by edge strength multiplied
+by the darkness of the disc inside. The best circle is refined on a half-pixel grid.</p>
+<p>Illuminators often leave a ring of glints inside the pupil, which produces a circular
+edge smaller than the pupil. The SDK therefore looks for a larger concentric edge; if
+the ring between the two circles is as dark as the pupil, the larger circle is taken.</p>
+<p>Pupil radius limits default to 3% to 22% of the shorter image side and can be set in
+pixels with <code>minPupilRadius</code> and <code>maxPupilRadius</code>.</p>
+<h4 id="3-limbus-iris-boundary">3. Limbus (iris boundary)</h4>
+<p>The iris boundary is searched as a separate circle, so pupil and iris centres may
+differ. Only the angular sectors in <code>irisAnglesToSearch</code> are used (by default
+-40 to 40 degrees and 140 to 220 degrees, with 0 pointing right and 90 down), because
+eyelids rarely cover the left and right sides of the iris. The search radius is limited
+by <code>minIrisRadius</code> and <code>maxIrisRadius</code> (12% to 60% of the shorter side by default) and by
+the allowed pupil-to-iris ratio (<code>minPupilIrisRatio</code> 0.15, <code>maxPupilIrisRatio</code> 0.75).</p>
+<p>The search has two stages, because searching all centres at once lets eyelid and eye
+corner edges win:</p>
+<ol>
+<li>Centres within 2 pixels of the pupil centre are tried with a radial derivative taken
+   over a wider scale, which measures the total step of the blurred limbus rather than
+   iris texture. The four lateral sectors are combined by the 0.34 quantile, so both
+   sides of the eye must show the edge, and at least 75% of the sectors must lie inside
+   the image. The innermost local maximum that reaches 90% of the strongest edge is
+   taken, since eyelids and eye corners lie further out. If nothing is found, the
+   search is repeated with the 0.67 quantile, which accepts an edge visible in two of
+   the four sectors.</li>
+<li>Centre and radius are refined around that result: up to 12% of the radius
+   horizontally but only 4% vertically, since lateral arcs fix the horizontal position
+   well and the vertical one only weakly, and within 10% of the radius.</li>
+</ol>
+<p>A pair is rejected when the pupil circle is not inside the iris circle.</p>
+<h4 id="4-eyelids">4. Eyelids</h4>
+<p>When <code>detectEyelids</code> is true, upper and lower eyelids are located separately. The
+central 1.5 iris radii of the iris width are split into three vertical bands. In each
+band, mean intensities of the iris rows (between pupil and limbus) are compared above
+and below every row, and the eyelid is the row with the strongest step from bright
+skin to darker iris. A step is accepted only if it is at least
+<code>max(15, 0.2 * iris intensity)</code> grey levels and the skin side is brighter than the
+typical iris intensity, measured as the median of the lateral iris sectors, by at least
+<code>max(15, 1.5 * robust sigma)</code>. Three points define a parabola, which must be convex
+towards the pupil; otherwise the most occluding point gives a horizontal line. The
+upper eyelid is searched down to the pupil centre, since it can cover part of the
+pupil.</p>
+<h4 id="5-normalization">5. Normalization</h4>
+<p>The iris is unwrapped with Daugman's rubber-sheet model to a <code>normalizedWidth</code> x
+<code>normalizedHeight</code> texture (256 x 64 by default) by bilinear sampling of the
+full-resolution grayscale image. Each column is an angle, starting at 0 degrees (to
+the right in image coordinates); each row interpolates linearly between the point on
+the pupil circle and the point on the limbus circle at that angle, which handles
+non-concentric circles and pupil dilation. The radial coordinate runs from 4% to 96%
+of the way out, to stay clear of the blurred boundaries.</p>
+<p>A sample is marked invalid when it lies outside the image, on a reflection (mask
+recomputed at full resolution), above the upper eyelid or below the lower eyelid.
+Finally, samples further than <code>outlierSigma</code> (3.0) robust standard deviations from the
+median intensity of the lateral sectors are masked, which removes eyelashes (darker)
+and residual skin or glints (brighter). The lateral statistics keep a large occluded
+area from shifting the reference. If less than 20% of the texture remains valid,
+extraction returns <code>null</code>.</p>
+<p><code>extractor().extract(image)</code> returns this texture as a <code>GRAY</code> image in which invalid
+pixels are <code>-1</code>.</p>
+<h4 id="6-encoding">6. Encoding</h4>
+<p>The texture is averaged into <code>templateRows</code> radial bands (16 by default, 4 texture rows
+each). A column of a band is valid if at least half of its rows are valid; a band with
+fewer than a quarter valid columns stays fully masked. Each band is a periodic signal
+around the eye. Its mean is removed and it is filtered in the frequency domain (radix-2
+FFT, so the texture width must be a power of two) with a one-sided 1D log-Gabor filter:</p>
+<pre><code>G(f) = exp( -ln(f / f0)^2 / (2 * ln(sigmaOnF)^2) ),   f0 = 1 / wavelength,   G = 0 for f &lt;= 0
+</code></pre>
+<p>With the defaults <code>wavelength = 18</code> texture pixels and <code>sigmaOnF = 0.5</code>. Because the
+filter has no DC response, the code does not depend on image brightness or contrast.
+Keeping only positive frequencies yields a complex response whose phase is quantized
+to two bits, the signs of the real and imaginary parts, at <code>templateCols</code> angular
+positions (128 by default, every second texture column).</p>
+<p>The mask bit of a cell is set only if the centre column is valid and at least three
+quarters of the filter window (half a wavelength on each side) saw valid iris. Fragile
+bits, the responses closest to zero, flip easily between captures; the weakest
+<code>fragileBitFraction</code> (15%) of the real and of the imaginary responses among valid
+cells are masked as well.</p>
+<h4 id="7-template-format-ir2">7. Template format (IR2)</h4>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>3</td>
+<td>ASCII <code>IR2</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>1</td>
+<td>Version, currently <code>1</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>1</td>
+<td>Rows (<code>templateRows</code>)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>1</td>
+<td>Columns / 32</td>
+</tr>
+<tr>
+<td>6</td>
+<td>1</td>
+<td>Bits per cell, always <code>2</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>1</td>
+<td>Reserved, <code>0</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>rows x cols x 2 / 8</td>
+<td>Code bit plane</td>
+</tr>
+<tr>
+<td>...</td>
+<td>rows x cols x 2 / 8</td>
+<td>Mask bit plane</td>
+</tr>
+</tbody>
+</table>
+<p>Bit <code>(r * cols + c) * 2</code> is the sign of the real part for row <code>r</code> and column <code>c</code>, and
+the next bit the sign of the imaginary part. Bits are packed into 64-bit words stored
+little-endian; every row occupies whole words, so an eye rotation is a circular shift
+of each row. With the defaults a template is 16 x 128 x 2 = 4096 code bits plus 4096
+mask bits: 8 + 512 + 512 = <strong>1,032 bytes</strong>.</p>
+<h4 id="8-matching">8. Matching</h4>
+<p>Two templates are compared with the masked fractional Hamming distance. The probe is
+shifted circularly by -<code>maxShift</code> to +<code>maxShift</code> columns (8 by default; one column is
+360 / 128 = 2.8 degrees, so about plus or minus 22.5 degrees of head tilt are
+compensated). For every shift:</p>
+<pre><code>n      = popcount(maskA AND maskB)                  bits valid in both templates
+HDraw  = popcount((codeA XOR codeB) AND maskA AND maskB) / n
+HDnorm = 0.5 - (0.5 - HDraw) * sqrt(n / normalizationBits)
+</code></pre>
+<p>The normalization (Daugman) pulls comparisons that rest on few bits towards 0.5, so a
+small overlap cannot produce a confident match. <code>normalizationBits</code> defaults to 40% of
+the template bits (1,638 for the default size). Shifts with fewer than
+<code>minComparedBitsFraction</code> (15%, 614 bits by default) common bits are ignored. The
+smallest <code>HDnorm</code> over all shifts gives the score <code>1 - HDnorm</code>: 1.0 for identical codes,
+about 0.5 for unrelated irises. If no shift has enough common bits, or the templates
+have different dimensions, the score is 0.</p>
+<p>For 1:N search, <code>identify</code> prepares all rotations of the probe once and scans the
+gallery linearly; with the defaults each comparison is 17 shifts over 64 words of code
+and mask. It returns the index and score of the best candidate if the score reaches
+the threshold.</p>
+<p>Templates created by SDK 0.6 and earlier have no <code>IR2</code> header. Two such templates are
+still compared with the old byte-equality method and <code>legacyThreshold</code> (0.7), but a
+legacy template never matches an <code>IR2</code> template (score 0). To move to the new
+algorithm, re-enroll from the stored images.</p>
+<h4 id="choosing-the-threshold">Choosing the threshold</h4>
+<p>The default threshold 0.67 corresponds to a Hamming distance of 0.33. The right value
+depends on your sensors, population, capture conditions and the false match rate you
+can accept, especially for large 1:N galleries, where the chance of a false match grows
+with the gallery size. Measure score distributions on your own images with the
+<a href="#accuracy-and-the-benchmark">benchmark</a> and set <code>IrisMatchProperties(threshold = ...)</code>.</p>
+<h3 id="configuration-reference">Configuration reference</h3>
+<p>All radii are in pixels of the input image. Changing any encoding parameter, or the
+texture size, produces templates that are not comparable with existing ones.</p>
+<p><code>IrisExtractProperties</code></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>workingSize</code></td>
+<td>240</td>
+<td>Shorter side of the downscaled copy used for segmentation (at least 80)</td>
+</tr>
+<tr>
+<td><code>minPupilRadius</code>, <code>maxPupilRadius</code></td>
+<td><code>null</code> (3% and 22% of the shorter side)</td>
+<td>Pupil radius limits</td>
+</tr>
+<tr>
+<td><code>minIrisRadius</code>, <code>maxIrisRadius</code></td>
+<td><code>null</code> (12% and 60% of the shorter side)</td>
+<td>Limbus radius limits</td>
+</tr>
+<tr>
+<td><code>minPupilIrisRatio</code>, <code>maxPupilIrisRatio</code></td>
+<td>0.15, 0.75</td>
+<td>Allowed pupil/iris radius ratio</td>
+</tr>
+<tr>
+<td><code>irisAnglesToSearch</code></td>
+<td><code>-40..40</code>, <code>140..220</code> degrees</td>
+<td>Sectors used to find the limbus</td>
+</tr>
+<tr>
+<td><code>normalizedWidth</code></td>
+<td>256</td>
+<td>Texture width; a power of two, at least 64, and a multiple of <code>templateCols</code></td>
+</tr>
+<tr>
+<td><code>normalizedHeight</code></td>
+<td>64</td>
+<td>Texture height, at least 8</td>
+</tr>
+<tr>
+<td><code>detectEyelids</code></td>
+<td><code>true</code></td>
+<td>Detect and mask upper and lower eyelids</td>
+</tr>
+<tr>
+<td><code>outlierSigma</code></td>
+<td>3.0</td>
+<td>Mask texture samples further than this many robust standard deviations from the iris median</td>
+</tr>
+</tbody>
+</table>
+<p><code>IrisEncodeProperties</code></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>templateRows</code></td>
+<td>16</td>
+<td>Radial bands (1 to 255)</td>
+</tr>
+<tr>
+<td><code>templateCols</code></td>
+<td>128</td>
+<td>Angular positions; a multiple of 32, 32 to 2048</td>
+</tr>
+<tr>
+<td><code>wavelength</code></td>
+<td>18.0</td>
+<td>Log-Gabor centre wavelength in texture pixels (greater than 2)</td>
+</tr>
+<tr>
+<td><code>sigmaOnF</code></td>
+<td>0.5</td>
+<td>Log-Gabor bandwidth (0.1 to 0.95)</td>
+</tr>
+<tr>
+<td><code>fragileBitFraction</code></td>
+<td>0.15</td>
+<td>Share of weakest responses masked per bit plane (0 to 0.5)</td>
+</tr>
+<tr>
+<td><code>templateWidth</code>, <code>templateHeight</code></td>
+<td>32, 4</td>
+<td>Deprecated, ignored by the v2 encoder</td>
+</tr>
+</tbody>
+</table>
+<p><code>IrisMatchProperties</code></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>threshold</code></td>
+<td>0.67</td>
+<td>Similarity threshold, <code>1 - HD</code></td>
+</tr>
+<tr>
+<td><code>maxShift</code></td>
+<td>8</td>
+<td>Rotation compensation in template columns, each side</td>
+</tr>
+<tr>
+<td><code>minComparedBitsFraction</code></td>
+<td>0.15</td>
+<td>Minimum share of bits valid in both templates</td>
+</tr>
+<tr>
+<td><code>normalizationBits</code></td>
+<td><code>null</code> (40% of template bits)</td>
+<td>Reference bit count for score normalization</td>
+</tr>
+<tr>
+<td><code>legacyThreshold</code></td>
+<td>0.7</td>
+<td>Threshold for pre-0.7 templates</td>
+</tr>
+</tbody>
+</table>
+<h3 id="quality-assessment">Quality assessment</h3>
+<p><code>iris().quality().assess(image)</code> segments the eye with the configured extractor
+settings and reports the components of ISO/IEC 29794-6. It returns <code>null</code> when no iris
+is found. Typical use is to ask for another capture before enrollment:</p>
+<pre><code class="language-kotlin">val q = sdk.iris().quality().assess(eye)
+if (q == null || !q.isAcceptable) {
+    // retake; q?.issues lists the failed checks
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Metric (<code>IrisQuality</code>)</th>
+<th>How it is measured</th>
+<th>Default threshold (<code>IrisQualityProperties</code>)</th>
+<th>Issue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>usableIrisArea</code></td>
+<td>Share of the normalized iris not masked by eyelids, eyelashes, reflections or image borders, 0 to 100</td>
+<td><code>minUsableIrisArea</code> 70</td>
+<td><code>LOW_USABLE_IRIS_AREA</code></td>
+</tr>
+<tr>
+<td><code>irisScleraContrast</code></td>
+<td><code>100 * (S - I) / (S + I)</code>; medians of sclera (1.1 to 1.25 iris radii) and outer iris in the lateral sectors; 0 if the sclera is outside the image</td>
+<td><code>minIrisScleraContrast</code> 5</td>
+<td><code>LOW_IRIS_SCLERA_CONTRAST</code></td>
+</tr>
+<tr>
+<td><code>irisPupilContrast</code></td>
+<td><code>100 * (I - P) / (I + P)</code>; inner iris median and the lower quartile of pupil samples, which suppresses glints</td>
+<td><code>minIrisPupilContrast</code> 30</td>
+<td><code>LOW_IRIS_PUPIL_CONTRAST</code></td>
+</tr>
+<tr>
+<td><code>greyScaleUtilisation</code></td>
+<td>Entropy of the 256-bin image histogram, bits</td>
+<td><code>minGreyScaleUtilisation</code> 6</td>
+<td><code>LOW_GREY_SCALE_UTILISATION</code></td>
+</tr>
+<tr>
+<td><code>irisRadius</code></td>
+<td>Limbus radius, pixels</td>
+<td><code>minIrisRadius</code> 75</td>
+<td><code>SMALL_IRIS</code></td>
+</tr>
+<tr>
+<td><code>pupilIrisRatio</code></td>
+<td><code>100 * pupil radius / iris radius</code></td>
+<td><code>pupilIrisRatioRange</code> 20 to 70</td>
+<td><code>PUPIL_TOO_SMALL_OR_LARGE</code></td>
+</tr>
+<tr>
+<td><code>irisPupilConcentricity</code></td>
+<td><code>100 * (1 - centre distance / iris radius)</code></td>
+<td><code>minIrisPupilConcentricity</code> 90</td>
+<td><code>LOW_CONCENTRICITY</code></td>
+</tr>
+<tr>
+<td><code>marginAdequacy</code></td>
+<td>Worst margin between iris and image border, relative to 0.6 iris radius left and right and 0.2 iris radius top and bottom, capped at 100</td>
+<td><code>minMarginAdequacy</code> 80</td>
+<td><code>IRIS_TOO_CLOSE_TO_EDGE</code></td>
+</tr>
+<tr>
+<td><code>sharpness</code></td>
+<td>Daugman's focus measure: power of the response to an 8 x 8 kernel (-1 outside, +3 in the central 4 x 4) over the visible iris, after scaling the image so that the iris radius is at most about 100 px; mapped to 0 to 100 by <code>x^2 / (x^2 + 120^2)</code></td>
+<td><code>minSharpness</code> 50</td>
+<td><code>OUT_OF_FOCUS</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>score</code> (0 to 100) is the usable iris area multiplied by <code>min(1, value / threshold)</code> for
+every other metric, so each metric below its threshold reduces it proportionally.
+<code>issues</code> lists the failed checks and <code>isAcceptable</code> is true when it is empty.</p>
+<p>The formulas follow the components of ISO/IEC 29794-6 but this is not a certified
+implementation of the standard. Confirm the thresholds on images from your own capture
+devices.</p>
+<h2 id="face-recognition-and-liveness">Face recognition and liveness</h2>
+<h3 id="api_1">API</h3>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>face().extractor().extract(nativeImage)</code></td>
+<td><code>NativeImage?</code></td>
+<td>Face crop, aligned on JVM, <code>null</code> if no usable face</td>
+</tr>
+<tr>
+<td><code>face().encoder().encode(nativeImage)</code></td>
+<td><code>DataBytes</code></td>
+<td>Embedding of an image that is already a face crop</td>
+</tr>
+<tr>
+<td><code>face().encoder().extractAndEncode(nativeImage)</code></td>
+<td><code>DataBytes?</code></td>
+<td>Extract with alignment, then encode</td>
+</tr>
+<tr>
+<td><code>face().matcher().matchScore(t1, t2)</code></td>
+<td><code>Double</code></td>
+<td>Distance between two embeddings; lower is more similar</td>
+</tr>
+<tr>
+<td><code>face().matcher().matches(t1, t2)</code></td>
+<td><code>Boolean</code></td>
+<td><code>distance &lt;= threshold</code></td>
+</tr>
+<tr>
+<td><code>face().matcher().matchScoreMin(t, list)</code> / <code>matchesAny(t, list)</code></td>
+<td><code>Double</code> / <code>Boolean</code></td>
+<td>Smallest distance to any template in the list</td>
+</tr>
+<tr>
+<td><code>face().livenessPhoto().score(nativeImage)</code> / <code>validate(...)</code></td>
+<td><code>Double</code> / <code>Boolean</code></td>
+<td>Liveness score of a face crop; valid if <code>score &gt; threshold</code></td>
+</tr>
+<tr>
+<td><code>face().livenessPhoto().extractAndScore(...)</code> / <code>extractAndValidate(...)</code></td>
+<td><code>Double</code> / <code>Boolean?</code></td>
+<td>Extract the face first (no alignment); <code>-1.0</code> or <code>null</code> when no face is found</td>
+</tr>
+<tr>
+<td><code>face().livenessPosition().detectPosition(nativeImage)</code></td>
+<td><code>Int</code></td>
+<td>0 straight, 1 left, 2 right, 3 top, 4 bottom</td>
+</tr>
+</tbody>
+</table>
+<p>Note that for faces <code>matchScore</code> is a distance, unlike the iris matcher's similarity.</p>
+<pre class="mermaid">flowchart LR
+    IMG[&quot;NativeImage&quot;] --&gt; DET[&quot;Platform face detector&lt;br/&gt;Android: ML Kit&lt;br/&gt;iOS: Vision&lt;br/&gt;JVM: OpenCV Haar cascades&quot;]
+    DET --&gt; CROP[&quot;Face crop&quot;]
+    CROP --&gt; PRE1[&quot;Resize to model input&lt;br/&gt;per-image standardization&quot;]
+    PRE1 --&gt; NET[&quot;TFLite FaceNet-type model&quot;]
+    NET --&gt; EMB[&quot;float32 embedding&lt;br/&gt;big-endian bytes&quot;]
+    EMB --&gt; DIST[&quot;L2-normalized Euclidean distance&lt;br/&gt;match if distance is at most the threshold&quot;]
+    CROP --&gt; PRE2[&quot;Resize to model input&lt;br/&gt;scale to -1..1, planar CHW&quot;]
+    PRE2 --&gt; LIVE[&quot;TFLite liveness model&quot;]
+    LIVE --&gt; MAP[&quot;Mean of 14 x 14 output map&lt;br/&gt;live if the mean exceeds the threshold&quot;]
+</pre>
+<h3 id="face-extraction-per-platform">Face extraction per platform</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Android</th>
+<th>iOS</th>
+<th>JVM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Detector</td>
+<td>ML Kit face detection, fast mode, all landmarks</td>
+<td>Vision <code>VNDetectFaceLandmarksRequest</code></td>
+<td>OpenCV Haar cascade <code>haarcascade_frontalface_alt</code> on a histogram-equalized grayscale image; minimum face size <code>max(24, shortSide / 8)</code></td>
+</tr>
+<tr>
+<td>Face chosen</td>
+<td>Largest</td>
+<td>First result</td>
+<td>Largest</td>
+</tr>
+<tr>
+<td>Requirements</td>
+<td>Box strictly inside the image, both eye landmarks found</td>
+<td>Box origin inside the image, both eye landmarks found</td>
+<td>None beyond a detection</td>
+</tr>
+<tr>
+<td>Crop</td>
+<td>The detection box</td>
+<td>The detection box</td>
+<td>Square, 20% margin around the box, resampled to 192 x 192</td>
+</tr>
+<tr>
+<td>Alignment</td>
+<td>Rotated only if the eye line is tilted by more than 45 degrees</td>
+<td>Rotated only if the eye line is tilted by more than 45 degrees</td>
+<td>Eyes found with <code>haarcascade_eye</code> in the upper 60% of the face; crop rotated so the eye line is level when the tilt is at most 30 degrees</td>
+</tr>
+</tbody>
+</table>
+<p>On Android the detector is called synchronously (<code>Tasks.await</code>), so face operations
+must run off the main thread. The JVM cascades are bundled in the JAR and copied to
+<code>${java.io.tmpdir}/.biometric-sdk/</code> on first use.</p>
+<h3 id="encoding-and-matching">Encoding and matching</h3>
+<p>The encoder resizes the crop to <code>inputWidth</code> x <code>inputHeight</code> (bilinear on Android,
+area averaging on the JVM, Core Graphics high-quality interpolation on iOS) and
+standardizes it per image: <code>(x - mean) / max(std, 1 / sqrt(N))</code> over all pixel values,
+as FaceNet expects. The model output is <code>outputLength</code> float32 values, returned as
+<code>4 * outputLength</code> bytes in big-endian order on all platforms. On iOS, the
+<code>encode(Image)</code> path converts the SDK image to grey replicated in three channels; the
+<code>NativeImage</code> path uses RGB on all platforms.</p>
+<p>The matcher L2-normalizes both embeddings and returns their Euclidean distance: 0 for
+identical directions, <code>sqrt(2)</code> for orthogonal ones, 2 for opposite ones. Normalizing
+in the matcher keeps distances comparable for models without a final L2 layer.
+Templates of different lengths cause an <code>IllegalArgumentException</code>.</p>
+<h3 id="photo-liveness">Photo liveness</h3>
+<p>The photo liveness check is written for a DeePixBiS-type model: the face crop is
+resized to <code>inputWidth</code> x <code>inputHeight</code>, scaled to [-1, 1] with <code>(x / 255 - 0.5) / 0.5</code>,
+converted to planar channel-first layout, and the model's 14 x 14 map of live
+probabilities is averaged. <code>validate</code> returns <code>score &gt; threshold</code>. The
+<code>extractAndScore</code> and <code>extractAndValidate</code> variants run the platform face extractor
+first, without alignment.</p>
+<h3 id="position-check">Position check</h3>
+<p><code>detectPosition</code> classifies head orientation against <code>threshold</code> (degrees) using the
+detector's angles: <code>1</code> (left) if yaw &gt;= threshold, <code>2</code> (right) if yaw &lt;= -threshold,
+<code>3</code> (top) and <code>4</code> (bottom) from the second angle, otherwise <code>0</code>. On Android the second
+angle is ML Kit's <code>headEulerAngleZ</code>, which is in-plane rotation; on iOS it is Vision's
+pitch, which Vision reports from iOS 15 (earlier versions are treated as 0). The JVM
+implementation always returns <code>0</code>.</p>
+<h2 id="model-loading-and-caching">Model loading and caching</h2>
+<p>Face and liveness models are loaded through <code>ResourceIO</code>, which is initialized by
+<code>BiometricSdkFactory.initialize</code>. A model <code>path</code> has the form <code>location:path</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>Android</th>
+<th>iOS</th>
+<th>JVM</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assets:</code></td>
+<td>APK assets</td>
+<td></td>
+<td></td>
+<td><code>assets:models/facenet.tflite</code></td>
+</tr>
+<tr>
+<td><code>bundle:</code></td>
+<td></td>
+<td>Main bundle resource (name and extension)</td>
+<td></td>
+<td><code>bundle:facenet.tflite</code></td>
+</tr>
+<tr>
+<td><code>classpath:</code></td>
+<td>yes</td>
+<td></td>
+<td>yes</td>
+<td><code>classpath:/models/facenet.tflite</code></td>
+</tr>
+<tr>
+<td><code>file:</code></td>
+<td>File in the app's internal files directory (<code>Context.openFileInput</code>)</td>
+<td>Absolute path</td>
+<td>Absolute path</td>
+<td><code>file:/opt/models/facenet.tflite</code></td>
+</tr>
+<tr>
+<td><code>https:</code></td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+<td><code>https://example.com/facenet.tflite</code></td>
+</tr>
+</tbody>
+</table>
+<p>Local paths are read on every initialization. <code>https:</code> resources are downloaded with
+Ktor and cached under a fixed name per
+model type, <code>facenet.tflite</code> or <code>liveness-photo.tflite</code>, in the platform cache
+directory (<code>Context.cacheDir</code>, <code>NSCachesDirectory</code>, <code>${java.io.tmpdir}/.biometric-sdk/</code>).
+Once cached, the file is used without contacting the server.</p>
+<p>The model configuration classes accept <code>modelChecksum</code>, <code>modelChecksumMethod</code>
+(<code>HashMethod.SHA256</code> or <code>HashMethod.CRC32</code>) and <code>overrideCacheOnWrongChecksum</code>. The
+checksum is compared as text: SHA-256 as lowercase hex; CRC-32 as Kotlin's signed
+hexadecimal <code>Int.toString(16)</code>, kept for compatibility with earlier versions. When all
+three are set:</p>
+<ul>
+<li>the downloaded (or locally read) file must match the checksum, otherwise an
+  <code>IOException</code> is thrown;</li>
+<li>with <code>overrideCacheOnWrongChecksum = true</code>, a cached file with a different checksum
+  is replaced by a fresh download.</li>
+</ul>
+<p>Checksums are currently applied only on iOS. On Android and the JVM the interpreter
+loads the model through a code path that accepts these arguments but does not check
+them (see <a href="#limitations-and-known-gaps">Limitations</a>). Because the cache name does not
+depend on the URL, changing the model URL on Android or the JVM does not replace a
+cached model; clear the cache file to force a new download.</p>
+<h2 id="images-records-and-i-o">Images, records and I/O</h2>
+<h3 id="image-types">Image types</h3>
+<p><code>Image</code> is the SDK's own raster type, used by the iris pipeline and the common codecs:
+<code>Image(width, height, colorType, colors)</code>, where <code>colors</code> is an <code>IntArray</code> in row-major
+order. <code>RGB</code> pixels are <code>0xRRGGBB</code>, <code>GRAY</code> pixels 0 to 255 (<code>-1</code> marks masked pixels in
+iris textures), <code>BINARY</code> pixels 0 or 1. <code>NativeImage</code> is the platform image used by the
+face module (<code>Bitmap</code>, <code>CGImageRef</code> wrapper, <code>BufferedImage</code>).</p>
+<h3 id="io-operations"><code>io()</code> operations</h3>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>readImage(bytes)</code></td>
+<td>Decode PNG or BMP in common code (format detected from the signature) into an <code>Image</code>: <code>GRAY</code> for grayscale files, <code>RGB</code> (0xRRGGBB) otherwise</td>
+</tr>
+<tr>
+<td><code>writeImage(image, ImageFormat.PNG / BMP)</code></td>
+<td>Encode in common code; <code>JPEG</code> throws <code>UnknownFormatException</code></td>
+</tr>
+<tr>
+<td><code>readNativeImage(dataBytes)</code></td>
+<td>Decode with the platform decoder (any format the platform supports)</td>
+</tr>
+<tr>
+<td><code>writeNativeImage(nativeImage, format)</code></td>
+<td>Android: PNG or JPEG (quality 90), BMP not supported. JVM: PNG, JPEG, BMP via ImageIO. iOS: returns the raw 32-bit pixel buffer regardless of <code>format</code></td>
+</tr>
+<tr>
+<td><code>convert(...)</code>, <code>convertTo...(...)</code></td>
+<td>Conversion between <code>Image</code> and the platform image, listed in <a href="#how-platform-code-is-split">Architecture</a></td>
+</tr>
+<tr>
+<td><code>readRecord(bytes)</code>, <code>writeRecord(record)</code></td>
+<td>Record I/O through registered serializers; no serializer is registered yet, so both throw <code>UnknownFormatException</code></td>
+</tr>
+</tbody>
+</table>
+<p>The common PNG decoder reads non-interlaced 8-bit images of every color type (grayscale,
+grayscale with alpha, RGB, RGB with alpha, palette), all five row filters and image data
+split across several IDAT chunks, and checks every chunk CRC. Alpha is dropped. It
+writes <code>RGB</code> images as RGB and <code>GRAY</code> or <code>BINARY</code> images as grayscale. zlib inflate and
+deflate are implemented in Kotlin, so PNG behaves the same everywhere. 16-bit and
+interlaced PNGs are rejected with an <code>IOException</code>; for those, and for JPEG or TIFF,
+decode with the platform (<code>readNativeImage</code> followed by <code>convert</code>).</p>
+<p>The BMP codec reads uncompressed 8-bit (palette), 24-bit and 32-bit bitmaps, bottom-up
+or top-down; an 8-bit bitmap with a gray palette becomes a <code>GRAY</code> image. It writes
+24-bit bitmaps.</p>
+<h3 id="iso-iec-biometric-records">ISO/IEC biometric records</h3>
+<p>The record serializers are public classes that can be used directly:</p>
+<pre><code class="language-kotlin">val serializer = IsoRecord19794_6Serializer()
+if (serializer.canRead(bytes)) {
+    val record: IsoRecord19794_6 = serializer.read(bytes)
+    val firstImage: ByteArray = record.data.first().image   // e.g. PNG or JPEG 2000 bytes
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Standard</th>
+<th>Detected by</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>IsoRecord19794_6Serializer</code></td>
+<td>ISO/IEC 19794-6, iris image data</td>
+<td><code>IIR</code> signature</td>
+<td>General header (format id, version, number of irises, certification flag, eyes represented) and per-image representation headers: capture date, device technology, vendor and type ids, quality blocks, eye label, image type, image format (raw, JPEG 2000, PNG), orientation and compression history, size, bit depth, range, roll angle and uncertainty, iris centre and diameter bounds, image data</td>
+</tr>
+<tr>
+<td><code>IsoRecord19794_2Serializer</code></td>
+<td>ISO/IEC 19794-2, finger minutiae</td>
+<td><code>FMR</code> signature</td>
+<td>General header and per-finger representations: capture date, device ids, quality and certification records, finger position, sampling rates, impression type, size, minutiae (type, x, y, angle, quality) and extended data</td>
+</tr>
+</tbody>
+</table>
+<p>The field layout matches the 2011 editions of both standards (16-byte and 15-byte
+general headers). Capture times are written and read in UTC with millisecond precision.
+Writing and reading a record gives back the same record, which the tests check field by
+field; the serializers are not validated against the conformance tests of ISO/IEC 29109.</p>
+<h2 id="accuracy-and-the-benchmark">Accuracy and the benchmark</h2>
+<h3 id="running-the-benchmark">Running the benchmark</h3>
+<p><code>IrisDatasetBenchmark</code> is a JVM test (<code>src/jvmTest</code>) that enrolls every image of a
+dataset with the default properties, compares all pairs and prints the results. It is
+skipped unless <code>IRIS_DATASET</code> is set.</p>
+<pre><code class="language-sh">IRIS_DATASET=/data/CASIA-Iris-Interval IRIS_REPORT=build/iris-report \
+  ./gradlew jvmTest --tests '*IrisDatasetBenchmark*'
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>IRIS_DATASET</code></td>
+<td>Directory searched recursively for <code>bmp</code>, <code>jpg</code>, <code>jpeg</code>, <code>png</code>, <code>tif</code>, <code>tiff</code> files</td>
+</tr>
+<tr>
+<td><code>IRIS_SUBJECT</code></td>
+<td>Regex with one group that extracts the identity (one eye of one person) from the path relative to <code>IRIS_DATASET</code>. Default: the parent directory, which fits layouts such as CASIA-Iris-Interval <code>001/L/S1001L01.jpg</code></td>
+</tr>
+<tr>
+<td><code>IRIS_LIMIT</code></td>
+<td>Maximum number of images</td>
+</tr>
+<tr>
+<td><code>IRIS_REPORT</code></td>
+<td>Directory for <code>scores.csv</code> (every comparison: subjects, genuine flag, score, compared bits, shift) and <code>det.csv</code> (FMR and FNMR for thresholds 0.40 to 1.00 in steps of 0.005)</td>
+</tr>
+</tbody>
+</table>
+<p>The report contains, in the terms of ISO/IEC 19795-1:</p>
+<ul>
+<li><strong>Failure to enroll</strong>: images that could not be read or segmented, or whose usable
+  texture was below 20%. Time per image is printed as well.</li>
+<li><strong>Genuine and impostor score distributions</strong>: mean, standard deviation, minimum and
+  maximum of <code>1 - HD</code> for pairs of the same eye and of different eyes.</li>
+<li><strong>EER</strong>: the error rate at the threshold where FNMR and FMR are closest (thresholds
+  0.40 to 1.00, step 0.001), with that threshold.</li>
+<li><strong>FNMR at fixed FMR</strong>: for FMR of 1%, 0.1%, 0.01% and 0.001%, as far as the number of
+  impostor pairs allows, with the threshold that achieves it.</li>
+<li><strong>FNMR and FMR at the configured default threshold</strong>.</li>
+</ul>
+<p>To evaluate other settings, change the property objects at the top of the test.</p>
+<h3 id="results-on-casia-iris-interval">Results on CASIA-Iris-Interval</h3>
+<p>Measured with this benchmark during development of 0.7.0 (commit <code>ec4b40a</code>) on
+CASIA-Iris-Interval: 2,639 near-infrared images of 393 eyes, all pairs compared
+(8,585 genuine and about 3.3 million impostor comparisons).</p>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Failure to enroll</td>
+<td>0.11%</td>
+</tr>
+<tr>
+<td>Equal error rate</td>
+<td>4.2%</td>
+</tr>
+<tr>
+<td>FNMR at FMR 0.1%</td>
+<td>5.0%</td>
+</tr>
+<tr>
+<td>FNMR at FMR 0.01%</td>
+<td>5.9%</td>
+</tr>
+<tr>
+<td>At the default threshold 0.67</td>
+<td>FNMR 6.8%, FMR 0.002%</td>
+</tr>
+</tbody>
+</table>
+<p>These figures describe one public dataset from one sensor, with every image enrolled
+and compared, including the poorest captures, and no quality screening. They are not an independent evaluation and do not predict the
+accuracy on other sensors or populations. The dataset is distributed by the Institute
+of Automation, Chinese Academy of Sciences (CASIA) under its own license and is not
+part of this repository.</p>
+<p>The unit tests in <code>commonTest</code> also check the pipeline on synthetic near-infrared eyes
+(<code>SyntheticIris</code>): segmentation accuracy, eyelid masking, rotation compensation,
+invariance to brightness and contrast, template serialization, 1:N identification and
+separation of genuine and impostor scores. Synthetic data catches regressions but does
+not measure accuracy.</p>
+<h2 id="react-native">React Native</h2>
+<p>The <a href="https://github.com/biometric-technologies/biometric-sdk-react-native">React Native wrapper</a>
+exposes face match and liveness. It uses native modules and does not work in Expo Go; use a
+development build.</p>
 <pre><code class="language-sh">npm install @iriscan/biometric-sdk-react-native
 cd ios &amp;&amp; pod install
 </code></pre>
-<p>The package uses native modules and does not work in Expo Go; use a development build.</p>
-<h2 id="initialization">Initialization</h2>
-<p>Initialize the SDK once, before any other call. Only the modules you configure are loaded.</p>
-<pre><code class="language-kotlin">val sdk = BiometricSdkFactory
-
-sdk.initialize(
-    sdk.configBuilder()
-        .withContext(applicationContext)            // Android only
-        .withFace(
-            extractor = FaceExtractProperties(),
-            encoder = FaceEncodeProperties(
-                FaceNetModelConfiguration(
-                    path = &quot;https://github.com/biometric-technologies/tensorflow-facenet-model-test/raw/master/model.tflite&quot;,
-                    inputWidth = 160,
-                    inputHeight = 160,
-                    outputLength = 512,
-                ),
-            ),
-            matcher = FaceMatchProperties(threshold = 1.0),
-            liveness = FaceLivenessDetectionProperties(
-                photo = LivenessModelPhotoConfiguration(
-                    path = &quot;https://github.com/biometric-technologies/liveness-detection-model/releases/download/v0.2.0/deePix.tflite&quot;,
-                    inputWidth = 224,
-                    inputHeight = 224,
-                    threshold = 0.5,
-                ),
-                position = LivenessModelPositionConfiguration(threshold = 15.0),
-            ),
-        )
-        .withIris(IrisExtractProperties(), IrisEncodeProperties(), IrisMatchProperties())
-        .build()
-)
-
-val ops = sdk.getInstance()!!
-</code></pre>
-<p><code>initialize</code> downloads the models on first run and caches them; later starts read from the cache. To pin a model, pass <code>modelChecksum</code> and <code>modelChecksumMethod</code> in the model configuration. With <code>overrideCacheOnWrongChecksum = true</code> a cached file that fails the check is downloaded again.</p>
-<p>Platform image types differ: <code>NativeImage</code> is <code>Bitmap</code> on Android, <code>CGImage</code> on iOS and <code>BufferedImage</code> on the JVM. <code>DataBytes</code> is <code>ByteArray</code> on Android and the JVM and <code>NSData</code> on iOS.</p>
-<h2 id="face-recognition">Face recognition</h2>
-<pre><code class="language-kotlin">val photo = ops.io().readNativeImage(photoBytes)
-val selfie = ops.io().readNativeImage(selfieBytes)
-
-val t1 = ops.face().encoder().extractAndEncode(photo) ?: error(&quot;no face on the photo&quot;)
-val t2 = ops.face().encoder().extractAndEncode(selfie) ?: error(&quot;no face on the selfie&quot;)
-
-val distance = ops.face().matcher().matchScore(t1, t2)   // lower means more similar
-val samePerson = ops.face().matcher().matches(t1, t2)    // distance &lt;= threshold
-</code></pre>
-<p><code>extractAndEncode</code> returns <code>null</code> when no face is found or the eyes cannot be located. If you already have a cropped, aligned face, call <code>encoder().encode(image)</code> directly.</p>
-<p>For 1:N search against a few enrolled templates, <code>matchesAny</code> and <code>matchScoreMin</code> take the minimum distance across a list. For large galleries, store the templates server-side and index them; the embedding is a plain float vector (big-endian, 4 bytes per value).</p>
-<p>The threshold depends on the model. With the FaceNet model above, a distance around 1.0 is a reasonable starting point; tune it on your own data for the false-accept rate you need.</p>
-<h2 id="liveness">Liveness</h2>
-<pre><code class="language-kotlin">val liveScore = ops.face().livenessPhoto().extractAndScore(selfie)   // 0.0 attack … 1.0 live
-val isLive = ops.face().livenessPhoto().extractAndValidate(selfie)   // score above threshold
-
-val pose = ops.face().livenessPosition().detectPosition(selfie)
-// 0 straight, 1 left, 2 right, 3 up, 4 down
-</code></pre>
-<p>The photo check catches prints and screen replays on a single frame. For higher assurance, combine it with a random head-turn challenge using <code>detectPosition</code> across consecutive frames. The default model is DeePixBiS (pixel-wise binary supervision): it outputs a 14×14 map of live probabilities, and the score is its mean. <a href="https://github.com/biometric-technologies/liveness-detection-model">liveness-detection-model</a> has an evaluation script that reports APCER and BPCER (ISO/IEC 30107-3) on your own images, so you can choose the threshold for your cameras, and training code for a MobileNetV2 alternative.</p>
-<h2 id="iris-recognition">Iris recognition</h2>
-<pre><code class="language-kotlin">val eye1 = ops.io().readImage(eyeImageBytes1)   // near-infrared eye image, PNG/BMP/JPEG
-val eye2 = ops.io().readImage(eyeImageBytes2)
-
-val t1 = ops.iris().encoder().extractAndEncode(eye1) ?: error(&quot;iris not found&quot;)
-val t2 = ops.iris().encoder().extractAndEncode(eye2) ?: error(&quot;iris not found&quot;)
-
-val same = ops.iris().matcher().matches(t1, t2)  // share of equal bits &gt;= threshold (0.7)
-</code></pre>
-<p>The extractor searches for the pupil and iris circles and unwraps the ring into a rectangular texture; <code>IrisExtractProperties</code> exposes the search ranges and step sizes if your images are unusually framed. <code>IrisEncodeProperties</code> sets the template size. Eye images from dedicated NIR scanners such as IriShield work best.</p>
-<p>ISO/IEC 19794-6 records go through the same calls:</p>
-<pre><code class="language-kotlin">val record = ops.io().readRecord(isoBytes)               // BiometricRecord
-val encoded = ops.iris().encoder().encode(record)
-val isoOut = ops.io().writeRecord(encoded)
-</code></pre>
-<h2 id="react-native_1">React Native</h2>
 <pre><code class="language-js">import {
   configure, faceCompare, faceScore,
   livenessScore, livenessValidate, livenessGetDirection,
@@ -258,8 +1639,163 @@ const live = await livenessValidate(selfieBase64);
 const direction = await livenessGetDirection(frameBase64); // 'STRAIGHT' | 'LEFT' | 'RIGHT' | 'UP' | 'DOWN'
 </code></pre>
 <p>This is the same API Inji Wallet calls for offline face verification; see <a href="/mosip">MOSIP and Inji</a>.</p>
-<h2 id="versions">Versions</h2>
-<p>The current release is 0.6.0. Release notes and binaries are on the <a href="https://github.com/biometric-technologies/biometric-sdk/releases">GitHub releases page</a>. The SDK is licensed under GPL-3.0. For licensing questions, write to <a href="mailto:info@iriscan.net">info@iriscan.net</a>.</p>
+<h2 id="where-it-is-used">Where it is used</h2>
+<ul>
+<li>Face match in <a href="https://docs.iriscan.com/mosip">Inji Wallet</a>, listed as compliant on the <a href="https://marketplace.mosip.io/products/257">MOSIP marketplace</a>.</li>
+<li><a href="https://www.iriscan.com/iris-recognition-sdk">Iriscan Cloud</a> and the Iriscan iris de-duplication server.</li>
+<li>Apps built with the <a href="https://github.com/biometric-technologies/biometric-sdk-react-native">React Native wrapper</a>.</li>
+</ul>
+<h2 id="related-repositories">Related repositories</h2>
+<ul>
+<li><a href="https://github.com/biometric-technologies/biometric-sdk-react-native">biometric-sdk-react-native</a>: the same face match and liveness for React Native apps.</li>
+<li><a href="https://github.com/biometric-technologies/biometric-sdk-android-example">biometric-sdk-android-example</a> and <a href="https://github.com/biometric-technologies/biometric-sdk-ios-example">biometric-sdk-ios-example</a>: minimal apps that enroll and identify.</li>
+<li><a href="https://github.com/biometric-technologies/biometric-sdk-cocoapods-release">biometric-sdk-cocoapods-release</a>: the prebuilt iOS framework behind the pod.</li>
+<li><a href="https://github.com/biometric-technologies/liveness-detection-model">liveness-detection-model</a>: training code and released liveness models.</li>
+<li><a href="https://github.com/biometric-technologies/biometric-converter">biometric-converter</a>: fingerprint images to ISO and ANSI minutiae templates.</li>
+<li><a href="https://github.com/biometric-technologies/docs">docs</a>: source of the developer documentation.</li>
+</ul>
+<h2 id="building-from-source">Building from source</h2>
+<p>Requirements:</p>
+<ul>
+<li>JDK 17 to run Gradle (the libraries target Java 11 bytecode)</li>
+<li>Android SDK with platform 35 (<code>ANDROID_HOME</code> or <code>sdk.dir</code> in <code>local.properties</code>)</li>
+<li>For the iOS targets: macOS with Xcode (CI uses Xcode 16.4) and CocoaPods</li>
+</ul>
+<p>Toolchain versions in the build: Kotlin 2.2.20, Gradle 8.14.3 (wrapper), Android Gradle
+Plugin 8.7.3.</p>
+<pre><code class="language-sh">./gradlew jvmTest                          # common and JVM tests on the JVM
+./gradlew jvmTest compileDebugKotlinAndroid  # what the Linux CI job runs
+./gradlew build                            # all targets the host supports, with tests
+./gradlew allTests                         # tests on every target the host can run
+./gradlew podPublishDebugXCFramework       # iOS XCFramework (macOS)
+./gradlew publishToMavenLocal              # install into ~/.m2 for local testing
+</code></pre>
+<p>Main dependencies:</p>
+<table>
+<thead>
+<tr>
+<th>Source set</th>
+<th>Dependencies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>common</td>
+<td>kotlinx-datetime 0.6.2, kotlinx-coroutines 1.10.2, Napier 2.7.1, Ktor client 3.2.3</td>
+</tr>
+<tr>
+<td>Android</td>
+<td>TensorFlow Lite 2.12.0, TensorFlow Lite Support 0.4.3, ML Kit face detection 16.1.5, Ktor OkHttp</td>
+</tr>
+<tr>
+<td>iOS</td>
+<td>TensorFlowLiteObjC 2.12.0 (CocoaPods), Ktor Darwin</td>
+</tr>
+<tr>
+<td>JVM</td>
+<td>JavaCPP TensorFlow Lite 2.10.0-1.5.8, JavaCPP OpenCV 4.6.0-1.5.8, Ktor OkHttp</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ci-and-releases">CI and releases</h2>
+<p>Two GitHub Actions workflows live in <code>.github/workflows</code>:</p>
+<p><strong><code>validate.yml</code></strong> runs on pushes to <code>dev</code> and on pull requests to <code>master</code> and <code>dev</code>:</p>
+<ul>
+<li><code>build</code> on <code>macos-15</code> with Xcode 16.4, JDK 17 and CocoaPods:
+  <code>./gradlew clean build podPublishDebugXCFramework</code></li>
+<li><code>jvm-android</code> on <code>ubuntu-latest</code> with JDK 17:
+  <code>./gradlew jvmTest compileDebugKotlinAndroid</code></li>
+</ul>
+<p><strong><code>release.yml</code></strong> runs on every push to <code>master</code>:</p>
+<ol>
+<li><code>check-version</code> reads the version with <code>./gradlew -q printVersion</code> and continues only
+   if no git tag with that version exists yet.</li>
+<li><code>jvm-android</code> signs the artifacts and publishes all Maven publications with
+   <code>publishAllPublicationsToSonatypeRepository closeAndReleaseSonatypeStagingRepository</code>.
+   Publishing goes to Maven Central through the Central Portal's OSSRH-compatible
+   staging API (<code>ossrh-staging-api.central.sonatype.com</code>); the legacy OSSRH service was
+   shut down in June 2025.</li>
+<li><code>cocoapods</code> (macOS, Xcode 16.4) builds the release XCFramework with
+   <code>podPublishReleaseXCFramework</code>, commits it to
+   <code>biometric-technologies/biometric-sdk-cocoapods-release</code>, tags it with the version and
+   runs <code>pod trunk push BiometricSdk.podspec</code>.</li>
+<li><code>git-release</code> creates a GitHub release named <code>v&lt;version&gt;</code> with the JAR and AAR files
+   and the zipped XCFramework.</li>
+</ol>
+<p>To release, raise <code>version</code> in <code>build.gradle.kts</code> and merge into <code>master</code>. The workflow
+needs these repository secrets: <code>SIGNING_KEY_ID</code>, <code>SIGNING_PASSWORD</code>,
+<code>SIGNING_SECRET_KEY_RING</code> (base64-encoded key ring), <code>OSSRH_USERNAME</code> and
+<code>OSSRH_PASSWORD</code> (a Central Portal user token), <code>COCOAPODS_GIT_DEPLOY_KEY</code> and
+<code>COCOAPODS_TRUNK_TOKEN</code>.</p>
+<p>For a local publication, the same values can be put into <code>local.properties</code>
+(<code>signing.keyId</code>, <code>signing.password</code>, <code>signing.secretKeyRingFile</code>, <code>ossrhUsername</code>,
+<code>ossrhPassword</code>); artifacts are signed only when <code>SIGN_JAR_AND_AAR=true</code>.</p>
+<h2 id="limitations-and-known-gaps">Limitations and known gaps</h2>
+<p>Accuracy and standards</p>
+<ul>
+<li>Thresholds must be calibrated. The iris threshold 0.67 is a starting point checked on
+  one dataset, the quality defaults follow values commonly used with ISO/IEC 29794-6,
+  and face and liveness thresholds depend entirely on the model you supply.</li>
+<li>Nothing in the SDK is a certified implementation of an ISO/IEC standard. Quality
+  metrics follow the components of ISO/IEC 29794-6, and the record serializers follow
+  the layout of ISO/IEC 19794-6 and 19794-2, without conformance testing.</li>
+<li>The iris pipeline is tuned for near-infrared images; visible-light iris images have
+  not been evaluated. There is no iris presentation attack detection.</li>
+<li>1:N iris identification is an exhaustive linear scan in memory. It has no index, so
+  very large galleries need partitioning or a dedicated service.</li>
+</ul>
+<p>Not implemented</p>
+<ul>
+<li><code>qualityControl()</code> and the <code>BiometricRecord</code> overloads of the iris API throw
+  <code>NotImplementedError</code>.</li>
+<li><code>io().readRecord()</code> and <code>io().writeRecord()</code> have no registered serializers.</li>
+<li>Fingerprints are limited to the ISO/IEC 19794-2 record format: there is no
+  fingerprint extraction or matching.</li>
+<li>Position liveness is not implemented on the JVM.</li>
+</ul>
+<p>Known issues</p>
+<ul>
+<li>Model checksums are not verified on Android and the JVM (the data-loading path of
+  <code>ResourceIO</code> ignores them); only iOS checks them.</li>
+<li>On the JVM, the cache directory <code>${java.io.tmpdir}/.biometric-sdk/</code> is created only
+  when a face extractor loads its cascades. With <code>extractor</code> left <code>null</code> in <code>withFace</code>,
+  the encoder or liveness model is loaded before any extractor exists, and saving a
+  downloaded model fails if the directory is missing.</li>
+<li><code>writeNativeImage</code> on iOS returns raw pixels instead of an encoded file, and on Android
+  does not support BMP.</li>
+<li>The common PNG decoder does not read 16-bit or interlaced files.</li>
+<li>The 19794-6 range field (camera to eye distance) is kept only as "unassigned",
+  "failed" or "measured": a measured distance is read back as <code>RANGE_OVERFLOW</code>.</li>
+<li>Face extraction differs between platforms (choice of face, crop margin, alignment),
+  so embeddings of the same photo are not guaranteed to be identical across platforms.</li>
+<li><code>BiometricSdkFactory.initialize</code> cannot reconfigure an initialized SDK, and debug
+  logging is always installed.</li>
+</ul>
+<p>For large-scale 1:N de-duplication, see the
+<a href="https://www.iriscan.com/iris-deduplication">iris de-duplication service</a>; for other
+licensing terms, <a href="https://www.iriscan.com/get-started">iriscan.com/get-started</a>.</p>
+<h2 id="contributing">Contributing</h2>
+<p>Bug reports with steps that reliably reproduce the problem, and feature requests, are
+welcome as <a href="https://github.com/biometric-technologies/biometric-sdk/issues">GitHub issues</a>.</p>
+<p>For pull requests:</p>
+<ul>
+<li>Open pull requests against <code>dev</code>. <code>master</code> is the release branch: every push to it
+  publishes a release when the version has changed.</li>
+<li>Keep platform code to what genuinely needs the platform; algorithms belong in
+  <code>commonMain</code>.</li>
+<li>Add or update tests in <code>commonTest</code> (and <code>jvmTest</code> where JVM-only tooling is needed),
+  and make sure <code>./gradlew jvmTest compileDebugKotlinAndroid</code> passes; the macOS CI job
+  builds the iOS targets.</li>
+<li>Changes to the iris algorithm should state their effect on the benchmark (failure to
+  enroll, EER and FNMR at fixed FMR) on a dataset you can name, together with the
+  dataset size.</li>
+<li>Code style is the official Kotlin style (<code>kotlin.code.style=official</code>).</li>
+</ul>
+<h2 id="license">License</h2>
+<p>GNU General Public License v3.0, see <a href="https://github.com/biometric-technologies/biometric-sdk/blob/master/LICENSE.md">LICENSE.md</a>. You can use, change and redistribute the SDK freely as long as your software is open source under the same terms. For a closed-source product, Iriscan offers a <a href="https://www.iriscan.com/commercial-license">commercial license</a>.</p>
+<h2 id="contact">Contact</h2>
+<p>Bugs and feature requests: <a href="https://github.com/biometric-technologies/biometric-sdk/issues">open an issue</a>. Everything else: info@iriscan.net, https://www.iriscan.com.</p>
+<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";mermaid.initialize({startOnLoad:true,theme:"dark",fontFamily:"Open Sans, sans-serif"});</script>
 <div class="pager"><a href="/"><small>Previous</small>Overview</a><a class="next" href="/converter"><small>Next</small>Biometric Converter</a></div>
 <footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.net">info@iriscan.net</a></footer>
 </main>
