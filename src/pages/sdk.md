@@ -1165,4 +1165,4 @@ GNU General Public License v3.0, see [LICENSE.md](https://github.com/biometric-t
 
 ## Contact
 
-Bugs and feature requests: [open an issue](https://github.com/biometric-technologies/biometric-sdk/issues). Everything else: info@iriscan.net, https://www.iriscan.com.
+Bugs and feature requests: [open an issue](https://github.com/biometric-technologies/biometric-sdk/issues). Everything else: info@iriscan.com, https://www.iriscan.com.

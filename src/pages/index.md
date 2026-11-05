@@ -28,4 +28,4 @@ desc: Documentation for the Iriscan Biometric SDK, Biometric Converter, Cloud Ir
 
 ## Support
 
-Bug reports and feature requests go to the issue tracker of the relevant repository. For production deployments, custom model training, integration work and support contracts, write to [info@iriscan.net](mailto:info@iriscan.net).
+Bug reports and feature requests go to the issue tracker of the relevant repository. For production deployments, custom model training, integration work and support contracts, write to [info@iriscan.com](mailto:info@iriscan.com).

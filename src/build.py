@@ -186,7 +186,7 @@ def shell(meta, body, nav, prev, nxt, canonical):
 {body}
 {MERMAID if 'class="mermaid"' in body else ''}
 {pager}
-<footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.net">info@iriscan.net</a></footer>
+<footer class="foot">© 2019–2026 Biometric Technologies OÜ · Tallinn, Estonia · <a href="mailto:info@iriscan.com">info@iriscan.com</a></footer>
 </main>
 </div>
 </body>

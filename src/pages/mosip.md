@@ -40,4 +40,4 @@ The model path and checksum come from the wallet's build configuration, so a dep
 
 ## For implementers
 
-Wallet providers and country integrators building on Inji can use the SDK as is, swap in a model trained on their own population, or add liveness and head-pose challenges, which the SDK already exposes. Iriscan provides model retraining and evaluation on representative data, tuning of thresholds for a target false-accept rate, and integration support: [info@iriscan.net](mailto:info@iriscan.net).
+Wallet providers and country integrators building on Inji can use the SDK as is, swap in a model trained on their own population, or add liveness and head-pose challenges, which the SDK already exposes. Iriscan provides model retraining and evaluation on representative data, tuning of thresholds for a target false-accept rate, and integration support: [info@iriscan.com](mailto:info@iriscan.com).
