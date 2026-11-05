@@ -12,7 +12,7 @@ Supported devices:
 - Iritech IriShield and other scanners on the Iritech IDDK 2000 SDK;
 - generic USB webcams (for development and demos, not for production iris capture).
 
-Runs on Windows and Linux with Java 11 or newer. Edge does not run on Android: on an Android tablet the IriShield works over USB OTG with IriTech's Android SDK, and matching is done with the [Biometric SDK](sdk.html) or the [Cloud Iris API](cloud-api.html) from your app.
+Runs on Windows and Linux with Java 11 or newer. Edge does not run on Android. For Android tablets and phones we provide an enrollment app on request (IriTech IriShield and Biomatiques EPI-1000 over USB OTG); to build capture into your own app, use the scanner maker's Android SDK with the [Biometric SDK](sdk.html) or the [Cloud Iris API](cloud-api.html).
 
 ## Installation
 
