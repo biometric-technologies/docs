@@ -50,6 +50,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: >-
+            One of the eyes matches a person already enrolled by the tenant
+            (de-duplication, on by default). Nothing is enrolled; the body names
+            the existing person for review.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DuplicateResponse'
         '422':
           description: Validation failed
           content:
@@ -358,6 +367,28 @@ components:
         blackPercentage:
           type: number
           format: double
+    DuplicateResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: string
+          example: '409'
+        message:
+          type: string
+          example: This iris is already enrolled
+        duplicateOf:
+          type: string
+          description: ID of the enrolled person whose iris matched
+        eye:
+          type: string
+          enum: [left, right]
+          description: Which eye of the new enrollment matched
+        score:
+          type: number
+          description: Match score of the best candidate, above the matching threshold
     ErrorResponse:
       type: object
       properties:

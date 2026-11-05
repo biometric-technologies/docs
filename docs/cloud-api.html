@@ -136,6 +136,17 @@ pre.mermaid{background:none;border:0;text-align:center;padding:0;margin:1.5rem 0
 <p>API keys are issued per tenant together with the monthly plan. To get one, <a href="https://www.iriscan.com/get-started">contact us</a> with the expected number of enrolments and identifications per month; on-premise deployment with the <a href="/edge">Edge service</a> is arranged the same way.</p>
 <h2 id="how-matching-works">How matching works</h2>
 <p>When a person is enrolled, each eye image is segmented, the iris ring is unwrapped and encoded into a binary iris code with a mask of unusable bits (eyelids, lashes, reflections). The response returns both, plus <code>blackPercentage</code>, the share of the iris hidden by occlusion. A high value means too little texture was visible, and the image is worth retaking.</p>
+<p>Enrolment is also a de-duplication check. Before a person is added, each eye is searched against everyone the tenant has enrolled. If a candidate scores above the matching threshold, nothing is enrolled and the API answers <code>409</code> with the existing person:</p>
+<pre><code class="language-json">{
+  &quot;timestamp&quot;: &quot;2026-11-05T10:15:30Z&quot;,
+  &quot;status&quot;: &quot;409&quot;,
+  &quot;message&quot;: &quot;This iris is already enrolled&quot;,
+  &quot;duplicateOf&quot;: &quot;6f1c2a9e4b7d4c3f9a1e2b3c4d5e6f70&quot;,
+  &quot;eye&quot;: &quot;left&quot;,
+  &quot;score&quot;: 0.83
+}
+</code></pre>
+<p>Show the candidate to a staff member: it is a likely repeat registration, to be confirmed or rejected by a person, not an automatic verdict. A <code>200</code> means that no enrolled person scored above the threshold. De-duplication is on by default and can be switched off per tenant.</p>
 <p><code>find</code> compares a probe eye against every enrolled template of the tenant and returns the best match, or <code>404</code> when nobody matches. <code>verify</code> compares the probe only against the given person and returns <code>412</code> when it does not match. Images are sent as base64 strings; near-infrared images from dedicated iris scanners give the best results.</p>
 <h2 id="errors">Errors</h2>
 <table>
@@ -157,6 +168,10 @@ pre.mermaid{background:none;border:0;text-align:center;padding:0;margin:1.5rem 0
 <tr>
 <td><code>404</code></td>
 <td>Person not found, or no match for <code>find</code></td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td>Enrolment: one of the eyes matches a person already enrolled (<code>duplicateOf</code>, <code>eye</code>, <code>score</code>)</td>
 </tr>
 <tr>
 <td><code>412</code></td>
@@ -213,7 +228,7 @@ pre.mermaid{background:none;border:0;text-align:center;padding:0;margin:1.5rem 0
     &quot;employeeId&quot;: &quot;E-1042&quot;
   }
 }</code></pre>
-<h4>Responses</h4><p class="resp"><span><b>200</b>Success</span><span><b>401</b>Unauthorized</span><span><b>422</b>Validation failed</span></p></div>
+<h4>Responses</h4><p class="resp"><span><b>200</b>Success</span><span><b>401</b>Unauthorized</span><span><b>409</b>One of the eyes matches a person already enrolled by the tenant (de-duplication, on by default). Nothing is enrolled; the body names the existing person for review.</span><span><b>422</b>Validation failed</span></p></div>
 <div class="op" id="editperson">
 <h3><span class="badge m-put">PUT</span>/persons/{id}</h3>
 <p class="sum">Edit person from the database</p>
@@ -384,6 +399,7 @@ pre.mermaid{background:none;border:0;text-align:center;padding:0;margin:1.5rem 0
 <h3 id="schema-personpage">PersonPage</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>numberOfElements</code></td><td>number (int64)</td><td>Persons on this page</td></tr><tr><td><code>totalElements</code></td><td>number (int64)</td><td>Persons matching the query</td></tr><tr><td><code>totalPages</code></td><td>number (int64)</td><td>Number of pages</td></tr><tr><td><code>content</code></td><td>array of <a href="#schema-person">Person</a></td><td>Persons on this page</td></tr></tbody></table>
 <h3 id="schema-irisdata">IrisData</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>leftEye</code></td><td><a href="#schema-eye">Eye</a></td><td>Left eye image, base64 (PNG or JPEG)</td></tr><tr><td><code>rightEye</code></td><td><a href="#schema-eye">Eye</a></td><td>Right eye image, base64 (PNG or JPEG)</td></tr></tbody></table>
 <h3 id="schema-eye">Eye</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>raw</code></td><td>string</td><td>Normalised iris texture, base64</td></tr><tr><td><code>code</code></td><td>string</td><td>Binary iris code, base64</td></tr><tr><td><code>mask</code></td><td>string</td><td>Mask of unusable bits for the code, base64</td></tr><tr><td><code>blackPercentage</code></td><td>number (double)</td><td>Share of the iris hidden by eyelids, lashes or reflections (0–1)</td></tr></tbody></table>
+<h3 id="schema-duplicateresponse">DuplicateResponse</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>timestamp</code></td><td>string (date-time)</td><td>Time of the error</td></tr><tr><td><code>status</code></td><td>string</td><td>HTTP status name</td></tr><tr><td><code>message</code></td><td>string</td><td>Human-readable error</td></tr><tr><td><code>duplicateOf</code></td><td>string</td><td>ID of the enrolled person whose iris matched</td></tr><tr><td><code>eye</code></td><td>string</td><td>Probe eye image, base64 (PNG or JPEG)</td></tr><tr><td><code>score</code></td><td>number</td><td>Match score of the best candidate, above the matching threshold</td></tr></tbody></table>
 <h3 id="schema-errorresponse">ErrorResponse</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>timestamp</code></td><td>string (date-time)</td><td>Time of the error</td></tr><tr><td><code>status</code></td><td>string</td><td>HTTP status name</td></tr><tr><td><code>message</code></td><td>string</td><td>Human-readable error</td></tr></tbody></table>
 <h3 id="schema-validationerrorresponse">ValidationErrorResponse</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>timestamp</code></td><td>string (date-time)</td><td>Time of the error</td></tr><tr><td><code>status</code></td><td>string</td><td>HTTP status name</td></tr><tr><td><code>message</code></td><td>string</td><td>Human-readable error</td></tr><tr><td><code>errors</code></td><td>array of string</td><td>Validation messages, one per field</td></tr></tbody></table>
 
